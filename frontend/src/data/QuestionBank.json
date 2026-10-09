@@ -1,0 +1,131 @@
+{
+    "fullName":{
+        "question": "What is your full legal name",
+        "explanation": "Use the name that appears on your ID or Social Security card",
+        "example": "Maria Elena Lopez",
+        "input": "text",
+        "askIf": null
+    },
+
+    "dateOfBirth":{
+        "question": "What is your date of birth",
+        "explanation": " ",
+        "example": "03/14/2004",
+        "input": "date",
+        "askIf": null
+    },
+
+    "address":{
+        "question": "What is your home address",
+        "explanation": "Use the address where you currently live, even if it is temporary",
+        "example": "123 Main St, Apt 4, Salt Lake City, UT 84101",
+        "input": "text",
+        "askIf": null
+    },
+
+    "phone":{
+        "question": "What is your phone number",
+        "explanation": " ",
+        "example": "801 456 8756",
+        "input": "number",
+        "askIf": null
+    },
+
+    "householdSize":{
+        "question": "How many people live in your household",
+        "explanation": "Count people who buy and cook together as one household",
+        "example": "If you live with 2 roommates but buy your own food, answer 1",
+        "input": "number",
+        "askIf": null
+    },
+
+    "monthlyIncome":{
+        "question": "How much money do you earn each month before taxes",
+        "explanation": "Include wages, tips, and any other income. Use the amount before taxes are taken out",
+        "example": "If you earn $15 an hour and work 80 hours a month, answer 1200",
+        "input": "number",
+        "askIf": null
+    },
+
+    "employer":{
+        "question": "Who is your employer",
+        "explanation": "Enter the name of the business or person you work for. If you have more than one job, list your main one",
+        "example": "Target",
+        "input": "text",
+        "askIf": null
+    },
+
+    "payFrequency":{
+        "question": "How often do you get paid",
+        "explanation": "Choose how often you receive a paycheck from your main job",
+        "example": "If you get paid every other Friday, choose biweekly",
+        "input": "select",
+        "options": ["weekly", "biweekly", "twice a month", "monthly"],
+        "askIf": null
+    },
+
+    "workHours":{
+        "question": "How many hours do you work each week",
+        "explanation": "Use your average if your hours change from week to week",
+        "example": "If you work 15 hours one week and 25 the next, answer 20",
+        "input": "number",
+        "askIf": null
+    },
+
+    "monthlyRent":{
+        "question": "How much do you pay for rent or mortgage each month",
+        "explanation": "Include only your share if you split housing costs with people outside your household",
+        "example": "If your rent is $1,200 and you split it evenly with one roommate, answer 600",
+        "input": "number",
+        "askIf": null
+    },
+
+    "paysUtilities":{
+        "question": "Do you pay for utilities separately from your rent",
+        "explanation": "Utilities include heating, cooling, electricity, gas, water, and phone",
+        "example": "If you pay your own electric bill, answer yes",
+        "input": "yesno",
+        "askIf": null
+    },
+
+    "isStudent":{
+        "question": "Are you currently enrolled in college or a training program",
+        "explanation": "This includes community college, university, and trade or vocational school",
+        "example": "If you take classes at a community college, answer yes",
+        "input": "yesno",
+        "askIf": null
+    },
+
+    "enrollmentStatus":{
+        "question": "Are you enrolled full-time or part-time",
+        "explanation": "Half-time or more usually means 6 or more credit hours per term. Check with your school if you are not sure",
+        "example": "If you take 12 credits this semester, choose full-time",
+        "input": "select",
+        "options": ["full-time", "half-time", "less than half-time"],
+        "askIf": { "field": "isStudent", "equals": true }
+    },
+
+    "hasWorkStudy":{
+        "question": "Do you have a federal or state work-study job",
+        "explanation": "Work-study is a job you got through your financial aid package",
+        "example": "If your financial aid award letter lists work-study and you have a campus job through it, answer yes",
+        "input": "yesno",
+        "askIf": { "field": "isStudent", "equals": true }
+    },
+
+    "hasChildUnder6":{
+        "question": "Do you take care of a child under 6 years old",
+        "explanation": "The child must live with you and be part of your household",
+        "example": "If your 4-year-old daughter lives with you, answer yes",
+        "input": "yesno",
+        "askIf": { "field": "isStudent", "equals": true }
+    },
+
+    "inCTEProgram":{
+        "question": "Are you in a career or technical education program",
+        "explanation": "These programs train you for a specific job, like nursing, welding, or medical assisting",
+        "example": "If you are in a certified nursing assistant program, answer yes",
+        "input": "yesno",
+        "askIf": { "field": "isStudent", "equals": true }
+    }
+}
