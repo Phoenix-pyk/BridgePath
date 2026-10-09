@@ -1,28 +1,4 @@
 {
-    "householdSize":{
-        "question": "How many people live in your household",
-        "explanation": "Count people who buy and cook together as one household",
-        "example": "If you live with 2 roommates but buy your own food, answer 1",
-        "input": "number",
-        "askIf": null
-    },
-
-    "phone":{
-        "question": "What is your phone number",
-        "explanation": " ",
-        "example": "801 456 8756",
-        "input": "number",
-        "askIf": null
-    },
-
-    "monthlyRent":{
-        "question": "How much do you pay for rent or mortgage each month",
-        "explanation": "Include only your share if you split housing costs with people outside your household",
-        "example": "If your rent is $1,200 and you split it evenly with one roommate, answer 600",
-        "input": "number",
-        "askIf": null
-    },
-
     "fullName":{
         "question": "What is your full legal name",
         "explanation": "Use the name that appears on your ID or Social Security card",
@@ -44,6 +20,22 @@
         "explanation": "Use the address where you currently live, even if it is temporary",
         "example": "123 Main St, Apt 4, Salt Lake City, UT 84101",
         "input": "text",
+        "askIf": null
+    },
+
+    "phone":{
+        "question": "What is your phone number",
+        "explanation": " ",
+        "example": "801 456 8756",
+        "input": "number",
+        "askIf": null
+    },
+
+    "householdSize":{
+        "question": "How many people live in your household",
+        "explanation": "Count people who buy and cook together as one household",
+        "example": "If you live with 2 roommates but buy your own food, answer 1",
+        "input": "number",
         "askIf": null
     },
 
@@ -76,6 +68,14 @@
         "question": "How many hours do you work each week",
         "explanation": "Use your average if your hours change from week to week",
         "example": "If you work 15 hours one week and 25 the next, answer 20",
+        "input": "number",
+        "askIf": null
+    },
+
+    "monthlyRent":{
+        "question": "How much do you pay for rent or mortgage each month",
+        "explanation": "Include only your share if you split housing costs with people outside your household",
+        "example": "If your rent is $1,200 and you split it evenly with one roommate, answer 600",
         "input": "number",
         "askIf": null
     },
