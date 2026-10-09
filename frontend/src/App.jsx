@@ -1,5 +1,6 @@
 import { useState } from "react";
 import ConsentScreen from "./screens/ConsentScreen.jsx";
+import IntakeUpload from "./screens/intakeUpload.jsx";
 
 export default function App() {
   const [step, setStep] = useState("consent");
@@ -9,7 +10,7 @@ export default function App() {
   }
 
   if (step === "upload") {
-    return <p>Upload screen (coming soon)</p>;
+    return <IntakeUpload goNext={() => setStep("questions")} />;
   }
 
   if (step === "questions") {
