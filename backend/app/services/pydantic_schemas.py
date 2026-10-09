@@ -79,7 +79,9 @@ class IncomeSource(BaseModel):
     income_type: Optional[IncomeType] = Field(None, description="Category of income matching the state application's own income taxonomy")
     gross_amount: Optional[float] = Field(None, description="Gross pay amount before deductions")
     frequency: Optional[Frequency] = Field(None)
-    hours_worked_per_week: Optional[float] = Field(None)
+    hours_worked_per_month: Optional[float] = Field(
+        None, description="Hours worked per month, matching both LDSS-2921 and LDSS-4826's 'Hours Worked Monthly' fields"
+    )
     pay_day_of_week: Optional[str] = Field(None, description="Day of the week paid, if printed on a paystub")
     employment_type: Optional[str] = Field(None, description="'employed' or 'self-employed', as implied by the source document")
 
@@ -96,8 +98,12 @@ class ShelterCosts(BaseModel):
     landlord_name: Optional[str] = Field(None)
     landlord_phone: Optional[str] = Field(None)
     utilities: Optional[List[UtilityDetail]] = Field(default_factory=list)
-    property_taxes_monthly: Optional[float] = Field(None, description="From a mortgage statement or property tax record")
-    homeowners_insurance_monthly: Optional[float] = Field(None, description="From a mortgage statement or insurance record")
+    property_taxes_annual: Optional[float] = Field(
+        None, description="Annual property tax amount, as shown on a property tax bill/assessment"
+    )
+    homeowners_insurance_annual: Optional[float] = Field(
+        None, description="Annual homeowner's insurance premium, matching LDSS-4826's 'Insurance on home per year' field, as shown on an insurance policy/declarations page"
+    )
     lease_start_date: Optional[str] = Field(None, description="From a lease agreement, format: YYYY-MM-DD")
 
 

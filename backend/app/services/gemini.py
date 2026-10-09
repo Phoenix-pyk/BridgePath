@@ -21,8 +21,15 @@ Extraction Guidelines:
 5. Classify each resource/asset using the resource_type enum (checking, savings, retirement_account, stocks_bonds,
    life_insurance, burial_trust_or_fund, vehicle, real_estate_other_than_residence, lump_sum_payment, other). Only fill
    vehicle_year/vehicle_make_model when resource_type is vehicle.
-6. If a field is not present in the document, leave it as null or empty list. Do NOT invent, assume, or hallucinate values.
-7. In 'issues_or_missing_info', report any quality or clarity problems (e.g., blurred text, truncated pay period, ambiguous landlord contact, missing page, expired ID).
+6. hours_worked_per_month must be monthly hours (matching the state forms' own "Hours Worked Monthly" fields). If the
+   document shows hours for a different period, scale it: weekly hours x 4.33, biweekly hours x 2.17, semi-monthly
+   hours x 2. If monthly hours are shown directly, use that value as-is.
+7. property_taxes_annual and homeowners_insurance_annual must be annual figures (e.g. a property tax bill's assessed
+   amount, or an insurance policy/declarations page's annual premium). Do NOT infer or back-calculate an annual figure
+   from a monthly mortgage escrow breakdown - if only a monthly escrow portion is visible, leave the field null and
+   note it in issues_or_missing_info instead of guessing.
+8. If a field is not present in the document, leave it as null or empty list. Do NOT invent, assume, or hallucinate values.
+9. In 'issues_or_missing_info', report any quality or clarity problems (e.g., blurred text, truncated pay period, ambiguous landlord contact, missing page, expired ID).
 """
 
 # Lazily constructed on first use (not at import time) so a missing/invalid
@@ -53,7 +60,7 @@ def _is_transient(exc: BaseException) -> bool:
 )
 def _call_gemini(content_part: types.Part) -> str:
     response = _get_client().models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-3.5-flash-lite",
         contents=[content_part],
         config=types.GenerateContentConfig(
             system_instruction=EXTRACTION_SYSTEM_PROMPT,

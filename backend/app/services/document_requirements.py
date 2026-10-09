@@ -185,7 +185,7 @@ DOCUMENT_REQUIREMENTS: list[DocumentRequirement] = [
             "Landlord statement", "Sewer and water bills", "Homeowner's insurance records", "Fuel bills",
             "Non-heating utility bills", "Telephone bills",
         ],
-        related_fields=["shelter.rent_or_mortgage_amount", "shelter.property_taxes_monthly", "shelter.homeowners_insurance_monthly", "shelter.utilities"],
+        related_fields=["shelter.rent_or_mortgage_amount", "shelter.property_taxes_annual", "shelter.homeowners_insurance_annual", "shelter.utilities"],
         notes="Medicaid does not require documentation of shelter expenses. Separate documentation may be needed per expense item.",
     ),
     DocumentRequirement(
