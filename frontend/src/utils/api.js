@@ -91,3 +91,4 @@ export async function checkEligibility(applicant) {
     });
     return response.json();
 }
+
