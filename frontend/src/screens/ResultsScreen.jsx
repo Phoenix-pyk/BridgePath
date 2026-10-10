@@ -33,6 +33,10 @@ function describeMissing(applicant, m) {
     if (m.item === "household_members") return "Who lives in your household";
     const found = findQuestionForPath(m.item);
     if (!found) return m.item;
+    if (found.item) {
+        // One line of a checklist, e.g. "Gets disability benefits (...)"
+        return person ? `${memberLabel(person)}: ${found.item.label}?` : `${found.item.label}?`;
+    }
     const text = questionText(found.entry, found.entry.scope === "member" ? person : null);
     return person && found.entry.scope !== "member" ? `${text} (${memberLabel(person)})` : text;
 }

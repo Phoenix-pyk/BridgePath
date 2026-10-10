@@ -2,8 +2,8 @@ import { useContext, useState } from "react";
 import { BridgeContext } from "../context/BridgeContext.jsx";
 import { addRow, applyAnswer } from "../utils/applicantEdits.js";
 import {
-    QUESTION_BANK, SECTION_LABELS, findMember, findRow, getIn, itemKey, listItems, memberLabel, pickPage,
-    questionText, splitPath, whoFlagMembers,
+    QUESTION_BANK, SECTION_LABELS, checklistItems, findMember, findRow, getIn, itemKey, listItems, memberLabel,
+    pickPage, questionText, splitPath, whoFlagMembers,
 } from "../utils/questionQueue.js";
 
 const ADD_ANOTHER_TEXT = {
@@ -156,6 +156,16 @@ function currentValue(item, entry, applicant) {
     }
     const base = item.scope === "member" ? findMember(applicant, item.memberId)
         : item.rowId ? findRow(applicant, item.scope, item.rowId) : applicant;
+    if (entry.input === "checklist") {
+        const checked = [];
+        const who = {};
+        for (const line of entry.items) {
+            const target = getIn(base, splitPath(line.path));
+            if (line.who ? target?.answer.value === true : target?.value === (line.checked ?? true)) checked.push(line.path);
+            if (line.who) who[line.path] = target?.who.value || [];
+        }
+        return { checked, who };
+    }
     const target = getIn(base, splitPath(entry.path));
     if (entry.input === "who") return { answer: target.answer.value, who: target.who.value || [] };
     return target?.value ?? null;
@@ -192,6 +202,7 @@ function Question({ item, applicant, onAnswer, onSkip }) {
                 entry={entry}
                 options={options}
                 applicant={applicant}
+                member={member}
                 initial={currentValue(item, entry, applicant)}
                 onAnswer={onAnswer}
             />
@@ -229,7 +240,57 @@ function MemberChecklist({ members, chosen, setChosen }) {
     );
 }
 
-function AnswerInput({ entry, options, applicant, initial, onAnswer }) {
+// "Do any of these apply?" — tick lines (lines marked `who` also ask which
+// people), or "None of these".
+function Checklist({ entry, applicant, member, initial, onAnswer }) {
+    const lines = checklistItems(entry, { applicant, member });
+    const [checked, setChecked] = useState(initial?.checked ?? []);
+    const [who, setWho] = useState(initial?.who ?? {});
+
+    function toggle(path) {
+        setChecked((prev) => (prev.includes(path) ? prev.filter((p) => p !== path) : [...prev, path]));
+    }
+    const missingWho = lines.some((l) => l.who && checked.includes(l.path) && !(who[l.path] || []).length);
+
+    return (
+        <div>
+            {lines.map((line) => (
+                <div key={line.path}>
+                    <label>
+                        <input type="checkbox" checked={checked.includes(line.path)} onChange={() => toggle(line.path)} />
+                        {line.label}
+                    </label>
+                    {line.who && checked.includes(line.path) && (
+                        <div>
+                            <p>Who?</p>
+                            <MemberChecklist
+                                members={applicant.household_members}
+                                chosen={who[line.path] || []}
+                                setChosen={(update) => setWho((prev) => ({
+                                    ...prev,
+                                    [line.path]: typeof update === "function" ? update(prev[line.path] || []) : update,
+                                }))}
+                            />
+                        </div>
+                    )}
+                </div>
+            ))}
+            <button disabled={checked.length === 0 || missingWho} onClick={() => onAnswer({ checked, who })}>
+                Continue
+            </button>
+            <button onClick={() => onAnswer({ checked: [], who: {} })}>{entry.noneLabel ?? "None of these"}</button>
+        </div>
+    );
+}
+
+function AnswerInput({ entry, options, applicant, member, initial, onAnswer }) {
+    if (entry.input === "checklist") {
+        return <Checklist entry={entry} applicant={applicant} member={member} initial={initial} onAnswer={onAnswer} />;
+    }
+    return <SingleInput entry={entry} options={options} applicant={applicant} initial={initial} onAnswer={onAnswer} />;
+}
+
+function SingleInput({ entry, options, applicant, initial, onAnswer }) {
     const members = applicant.household_members;
     const [text, setText] = useState(
         Array.isArray(initial) && entry.input === "list" ? initial.join("\n")

@@ -86,12 +86,43 @@ export function evalCond(cond, ctx) {
     return false;
 }
 
+// A checklist's items that apply here (each item may have its own askIf).
+// ctx = { applicant, member? }
+export function checklistItems(entry, ctx) {
+    return entry.items.filter((item) => evalCond(item.askIf, ctx));
+}
+
+// Where a checklist's item paths start: the member for member scope, else the applicant root
+export function checklistBase(entry, ctx) {
+    return entry.scope === "member" ? ctx.member : ctx.applicant;
+}
+
+function checklistItemAnswered(item, base) {
+    const target = getIn(base, splitPath(item.path));
+    return item.who ? isAnswered(target?.answer) : isAnswered(target);
+}
+
+// Everything that can add rows (a yes/no entry with addRows, or a checklist
+// item with addRows), by id: the entry's qid, or the item's own `id`.
+export const ROW_SOURCES = {};
+for (const [qid, entry] of Object.entries(QUESTION_BANK)) {
+    if (entry.addRows) ROW_SOURCES[qid] = { path: entry.path, addRows: entry.addRows, rowTypes: entry.rowTypes };
+    for (const item of entry.items || []) {
+        if (item.addRows) ROW_SOURCES[item.id] = { path: item.path, addRows: item.addRows, rowTypes: item.rowTypes };
+    }
+}
+
 // Members a whoFlag question is about (e.g. everyone 16+)
 export function whoFlagMembers(applicant, entry) {
     return applicant.household_members.filter((m) => evalCond(entry.memberAskIf, { applicant, member: m }));
 }
 
-function needsAnswer(entry, target, applicant) {
+function needsAnswer(entry, target, applicant, member) {
+    if (entry.input === "checklist") {
+        const ctx = { applicant, member };
+        const base = checklistBase(entry, ctx);
+        return checklistItems(entry, ctx).some((item) => !checklistItemAnswered(item, base));
+    }
     if (entry.input === "who") return !isAnswered(target?.answer);
     if (entry.input === "whoFlag") {
         return whoFlagMembers(applicant, entry).some((m) => !isAnswered(m[entry.path]));
@@ -128,7 +159,7 @@ export function listItems(applicant, { doneAdding = new Set() } = {}) {
             if (run.scope === "household") {
                 for (const [qid, entry] of run.entries) {
                     if (!evalCond(entry.askIf, { applicant })) continue;
-                    const target = entry.input === "whoFlag" ? null : getIn(applicant, splitPath(entry.path));
+                    const target = entry.path ? getIn(applicant, splitPath(entry.path)) : null;
                     items.push({ kind: "question", qid, scope: "household", section: section.name,
                         answered: !needsAnswer(entry, target, applicant) });
                 }
@@ -136,8 +167,9 @@ export function listItems(applicant, { doneAdding = new Set() } = {}) {
                 for (const member of applicant.household_members) {
                     for (const [qid, entry] of run.entries) {
                         if (!evalCond(entry.askIf, { applicant, member })) continue;
+                        if (entry.input === "checklist" && checklistItems(entry, { applicant, member }).length === 0) continue;
                         items.push({ kind: "question", qid, scope: "member", memberId: member.id, section: section.name,
-                            answered: !needsAnswer(entry, getIn(member, splitPath(entry.path)), applicant) });
+                            answered: !needsAnswer(entry, entry.path ? getIn(member, splitPath(entry.path)) : null, applicant, member) });
                     }
                 }
             } else {
@@ -148,11 +180,11 @@ export function listItems(applicant, { doneAdding = new Set() } = {}) {
                             answered: !needsAnswer(entry, getIn(row, splitPath(entry.path)), applicant) });
                     }
                 }
-                // After the rows: "add another?" for each addRows question answered yes
-                for (const [qid, entry] of Object.entries(QUESTION_BANK)) {
-                    if (entry.addRows !== run.scope || doneAdding.has(qid)) continue;
-                    if (getIn(applicant, splitPath(entry.path))?.value !== true) continue;
-                    items.push({ kind: "addAnother", qid, scope: run.scope, section: section.name, answered: false });
+                // After the rows: "add another?" for each row source answered yes
+                for (const [sourceId, source] of Object.entries(ROW_SOURCES)) {
+                    if (source.addRows !== run.scope || doneAdding.has(sourceId)) continue;
+                    if (getIn(applicant, splitPath(source.path))?.value !== true) continue;
+                    items.push({ kind: "addAnother", qid: sourceId, scope: run.scope, section: section.name, answered: false });
                 }
             }
         }
@@ -195,12 +227,16 @@ export function buildQueue(applicant, { skipped = new Set(), doneAdding = new Se
 // "incomes[].frequency", "household.lives_in_new_york". Find the bank entry that asks it.
 const PATH_SCOPES = { "household_members[]": "member", "incomes[]": "income", "assets[]": "asset" };
 
+// Returns { qid, entry, item? }; `item` is set when the path is one line of a checklist.
 export function findQuestionForPath(itemPath) {
     const [head, ...rest] = itemPath.split(".");
     const scope = PATH_SCOPES[head] ?? "household";
     const path = scope === "household" ? itemPath : rest.join(".");
     for (const [qid, entry] of Object.entries(QUESTION_BANK)) {
-        if (entry.scope === scope && entry.path === path) return { qid, entry };
+        if (entry.scope !== scope) continue;
+        if (entry.path === path) return { qid, entry };
+        const item = (entry.items || []).find((i) => i.path === path);
+        if (item) return { qid, entry, item };
     }
     // Member facts asked once for the whole household (pregnancy, work limits)
     if (scope === "member") {

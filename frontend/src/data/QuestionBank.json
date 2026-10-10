@@ -8,29 +8,32 @@
         "options": [{ "value": "apply", "label": "Applying" }, { "value": "recertify", "label": "Renewing" }],
         "askIf": null
     },
-    "noticeLanguage": {
-        "section": "basics", "scope": "household", "path": "application.notice_language",
-        "question": "What language do you want your letters from SNAP in?",
+    "letterPreferences": {
+        "section": "basics", "scope": "household",
+        "question": "Do any of these apply to you?",
         "explanation": "SNAP will mail you letters about your case",
         "example": "",
-        "input": "select",
-        "options": [{ "value": "english", "label": "English only" }, { "value": "spanish_english", "label": "Spanish and English" }],
+        "input": "checklist",
+        "items": [
+            { "path": "application.notice_language", "label": "I want my letters in Spanish and English", "checked": "spanish_english", "unchecked": "english" },
+            { "path": "application.needs_alt_format", "label": "I'm blind or seriously visually impaired and want my letters in another format" }
+        ],
+        "noneLabel": "None of these",
         "askIf": null
     },
     "altFormat": {
         "section": "basics", "scope": "household", "path": "application.alt_format",
-        "question": "Are you blind or seriously visually impaired and want your letters in another format?",
+        "question": "Which format do you want your letters in?",
         "explanation": "Braille is available if none of the other formats work for you",
         "example": "",
         "input": "select",
         "options": [
-            { "value": "none", "label": "No, regular print is fine" },
             { "value": "large_print", "label": "Large print" },
             { "value": "data_cd", "label": "Data CD" },
             { "value": "audio_cd", "label": "Audio CD" },
             { "value": "braille", "label": "Braille" }
         ],
-        "askIf": null
+        "askIf": { "field": "application.needs_alt_format", "equals": true }
     },
     "phone": {
         "section": "basics", "scope": "household", "path": "extra.phone",
@@ -193,14 +196,6 @@
         ],
         "askIf": null
     },
-    "isVeteran": {
-        "section": "person", "scope": "member", "path": "is_veteran",
-        "question": "Is {name} a veteran?",
-        "explanation": "Served in the U.S. military",
-        "example": "",
-        "input": "yesno",
-        "askIf": { "age": { "min": 17 } }
-    },
     "isHispanic": {
         "section": "person", "scope": "member", "path": "is_hispanic",
         "question": "Is {name} Hispanic or Latino?",
@@ -264,12 +259,19 @@
         "skipValue": "declined", "skipLabel": "Prefer not to say",
         "askIf": { "age": { "min": 16 } }
     },
-    "disabilityBenefits": {
-        "section": "person", "scope": "member", "path": "receives_disability_benefits",
-        "question": "Does {name} get disability benefits?",
-        "explanation": "For example SSI, Social Security Disability (SSDI), veterans disability, or New York State disability",
+    "personFlags": {
+        "section": "person", "scope": "member",
+        "question": "Do any of these apply to {name}?",
+        "explanation": "",
         "example": "",
-        "input": "yesno",
+        "input": "checklist",
+        "items": [
+            { "path": "receives_disability_benefits", "label": "Gets disability benefits (SSI, Social Security Disability, veterans disability, or New York State disability)" },
+            { "path": "has_medicaid_spenddown", "label": "Is on Medicaid with a spenddown (pays some medical costs each month before Medicaid pays)" },
+            { "path": "is_veteran", "label": "Served in the U.S. military (veteran)", "askIf": { "age": { "min": 17 } } },
+            { "path": "foster_care_at_18", "label": "Was in foster care on their 18th birthday", "askIf": { "age": { "min": 18 } } }
+        ],
+        "noneLabel": "None of these",
         "askIf": null
     },
     "hasMedicalBills": {
@@ -287,14 +289,6 @@
         "example": "Prescriptions, $40 a month, paid by me",
         "input": "longtext",
         "askIf": { "field": "member.has_medical_bills", "equals": true }
-    },
-    "hasSpenddown": {
-        "section": "person", "scope": "member", "path": "has_medicaid_spenddown",
-        "question": "Is {name} on Medicaid with a spenddown?",
-        "explanation": "A spenddown means you have to pay some medical costs yourself each month before Medicaid pays",
-        "example": "",
-        "input": "yesno",
-        "askIf": null
     },
     "spenddownAmount": {
         "section": "person", "scope": "member", "path": "medicaid_spenddown_amount",
@@ -363,15 +357,6 @@
         "input": "yesno",
         "askIf": { "all": [{ "field": "member.is_student", "equals": true }, { "age": { "min": 18, "max": 49 } }] }
     },
-    "fosterCareAt18": {
-        "questionSelf": "Were you in foster care on your 18th birthday?",
-        "section": "person", "scope": "member", "path": "foster_care_at_18",
-        "question": "Was {name} in foster care on their 18th birthday?",
-        "explanation": "",
-        "example": "",
-        "input": "yesno",
-        "askIf": { "age": { "min": 18 } }
-    },
     "boarderOrFoster": {
         "section": "person", "scope": "member", "path": "boarder_or_foster",
         "question": "Is {name} a boarder, foster child or foster adult?",
@@ -421,23 +406,20 @@
         "input": "yesno",
         "askIf": null
     },
-    "snapElsewhere": {
-        "section": "household", "scope": "household", "path": "household.receives_snap_elsewhere",
-        "question": "Is anyone in your household applying for or getting SNAP or cash assistance somewhere else?",
-        "explanation": "For example, in another state or another county",
-        "example": "",
-        "input": "yesno",
-        "askIf": null
-    },
-    "treatmentOrGroupHome": {
-        "section": "household", "scope": "household", "path": "household.in_treatment_or_group_home",
-        "question": "Does anyone in your household live in a drug or alcohol treatment center or a state-certified group home or supported apartment?",
+
+    "householdFlags": {
+        "section": "household", "scope": "household",
+        "question": "Do any of these apply to anyone in your household?",
         "explanation": "",
         "example": "",
-        "input": "yesno",
+        "input": "checklist",
+        "items": [
+            { "path": "household.receives_snap_elsewhere", "label": "Applying for or getting SNAP or cash assistance somewhere else, like another state or county" },
+            { "path": "household.in_treatment_or_group_home", "label": "Lives in a drug or alcohol treatment center, or a state-certified group home or supported apartment" }
+        ],
+        "noneLabel": "None of these",
         "askIf": null
     },
-
     "hasIncome": {
         "section": "income", "scope": "household", "path": "household.has_income",
         "question": "Does anyone in your household get any income?",
@@ -526,20 +508,18 @@
         "input": "number",
         "askIf": { "field": "row.income_type", "in": ["wages", "self_employment"] }
     },
-    "incomeChanged": {
-        "section": "income", "scope": "household", "path": "household.income_changed_last_30_days",
-        "question": "In the last 30 days, has anyone in your household changed or quit a job, or had their hours or income cut?",
+    "incomeFlags": {
+        "section": "income", "scope": "household",
+        "question": "Do any of these apply to anyone in your household?",
         "explanation": "",
         "example": "",
-        "input": "yesno",
-        "askIf": null
-    },
-    "pendingIncome": {
-        "section": "income", "scope": "household", "path": "household.pending_income",
-        "question": "Is anyone in your household expecting income they haven't received yet?",
-        "explanation": "",
-        "example": "A new job that hasn't paid yet, or an unemployment claim that is still being processed",
-        "input": "yesno",
+        "input": "checklist",
+        "items": [
+            { "path": "household.income_changed_last_30_days", "label": "Changed or quit a job, or had hours or income cut, in the last 30 days" },
+            { "path": "household.pending_income", "label": "Is expecting income they haven't received yet, like a first paycheck or an unemployment claim" },
+            { "path": "household.on_strike", "label": "Is on strike", "who": true }
+        ],
+        "noneLabel": "None of these",
         "askIf": null
     },
     "pendingIncomeDetails": {
@@ -549,14 +529,6 @@
         "example": "My first paycheck from my new job at Target, about $500, on the 15th",
         "input": "longtext",
         "askIf": { "field": "household.pending_income", "equals": true }
-    },
-    "onStrike": {
-        "section": "income", "scope": "household", "path": "household.on_strike",
-        "question": "Is anyone in your household on strike?",
-        "explanation": "",
-        "example": "",
-        "input": "who",
-        "askIf": null
     },
     "dependentCareMonthly": {
         "section": "income", "scope": "household", "path": "household.dependent_care_monthly",
@@ -575,34 +547,19 @@
         "askIf": { "field": "household.dependent_care_monthly", "gt": 0 }
     },
 
-    "hasCashOrAccounts": {
-        "section": "resources", "scope": "household", "path": "household.has_more_cash",
-        "question": "Does anyone in your household have cash or money in a bank account that isn't on a statement you uploaded?",
-        "explanation": "Include cash at home, checking and savings accounts, and accounts shared with someone outside your household. This only affects how fast you can get SNAP",
+    "resourceFlags": {
+        "section": "resources", "scope": "household",
+        "question": "Does anyone in your household have any of these?",
+        "explanation": "This only affects how fast you can get SNAP. Include accounts shared with someone outside your household",
         "example": "",
-        "input": "yesno",
-        "addRows": "asset",
-        "rowTypes": ["checking", "savings", "other"],
-        "askIf": null
-    },
-    "hasFinancialAssets": {
-        "section": "resources", "scope": "household", "path": "household.has_financial_assets",
-        "question": "Does anyone in your household have other savings or investments?",
-        "explanation": "",
-        "example": "Stocks, bonds, savings bonds, retirement accounts, IRAs, mutual funds, trust funds, CDs",
-        "input": "yesno",
-        "addRows": "asset",
-        "rowTypes": ["retirement_account", "stocks_bonds", "burial_trust_or_fund", "life_insurance", "other"],
-        "askIf": null
-    },
-    "hasVehicles": {
-        "section": "resources", "scope": "household", "path": "household.has_vehicles",
-        "question": "Does anyone in your household have a car, truck or other vehicle?",
-        "explanation": "",
-        "example": "",
-        "input": "yesno",
-        "addRows": "asset",
-        "rowTypes": ["vehicle"],
+        "input": "checklist",
+        "items": [
+            { "id": "hasCashOrAccounts", "path": "household.has_more_cash", "label": "Cash, or money in a bank account that isn't on a statement you uploaded", "addRows": "asset", "rowTypes": ["checking", "savings", "other"] },
+            { "id": "hasFinancialAssets", "path": "household.has_financial_assets", "label": "Other savings or investments (stocks, bonds, retirement accounts, IRAs, trust funds, CDs)", "addRows": "asset", "rowTypes": ["retirement_account", "stocks_bonds", "burial_trust_or_fund", "life_insurance", "other"] },
+            { "id": "hasVehicles", "path": "household.has_vehicles", "label": "A car, truck or other vehicle", "addRows": "asset", "rowTypes": ["vehicle"] },
+            { "path": "household.owns_property", "label": "Property, including your home (buildings, land, rental property, vacation home)" }
+        ],
+        "noneLabel": "None of these",
         "askIf": null
     },
     "assetMember": {
@@ -654,14 +611,6 @@
         "example": "Toyota Corolla",
         "input": "text",
         "askIf": { "field": "row.resource_type", "equals": "vehicle" }
-    },
-    "ownsProperty": {
-        "section": "resources", "scope": "household", "path": "household.owns_property",
-        "question": "Does anyone applying own any property, including your home?",
-        "explanation": "Buildings, land, rental property, or a vacation home",
-        "example": "",
-        "input": "yesno",
-        "askIf": null
     },
     "propertyDetails": {
         "section": "resources", "scope": "household", "path": "household.property_details",
@@ -720,12 +669,18 @@
         "input": "money",
         "askIf": { "field": "shelter.living_situation", "includesAny": ["own"] }
     },
-    "paysHeat": {
-        "section": "housing", "scope": "household", "path": "shelter.pays_heat_separately",
-        "question": "Do you pay for heat separately from your rent or mortgage?",
-        "explanation": "",
-        "example": "If you get a gas bill for your heat, answer yes. If heat is included in your rent, answer no",
-        "input": "yesno",
+    "utilityCosts": {
+        "section": "housing", "scope": "household",
+        "question": "Do you pay for any of these yourself, separately from your rent or mortgage?",
+        "explanation": "These can lower how much income SNAP counts",
+        "example": "If you get your own gas bill for heat, choose heat",
+        "input": "checklist",
+        "items": [
+            { "path": "shelter.pays_heat_separately", "label": "Heat" },
+            { "path": "shelter.pays_air_conditioning", "label": "Air conditioning (in your electric bill or as a separate fee)" },
+            { "path": "shelter.pays_other_utilities", "label": "Other utilities: electricity, cooking gas, water, trash, or a fee to set up utilities" }
+        ],
+        "noneLabel": "None of these",
         "askIf": null
     },
     "heatType": {
@@ -761,22 +716,6 @@
         "input": "text",
         "skipValue": "", "skipLabel": "I don't have it",
         "askIf": { "field": "shelter.pays_heat_separately", "equals": true }
-    },
-    "paysAirConditioning": {
-        "section": "housing", "scope": "household", "path": "shelter.pays_air_conditioning",
-        "question": "Do you pay for air conditioning, either in your electric bill or as a separate fee?",
-        "explanation": "",
-        "example": "If you use an air conditioner and pay your own electric bill, answer yes",
-        "input": "yesno",
-        "askIf": null
-    },
-    "paysOtherUtilities": {
-        "section": "housing", "scope": "household", "path": "shelter.pays_other_utilities",
-        "question": "Do you pay separately for any other utilities?",
-        "explanation": "For example electricity, cooking gas, water, trash, or a fee to set up utilities",
-        "example": "If you pay your own electric bill, answer yes",
-        "input": "yesno",
-        "askIf": null
     },
     "someoneElsePays": {
         "section": "housing", "scope": "household", "path": "shelter.someone_else_pays",
@@ -843,55 +782,24 @@
         "askIf": null
     },
 
-    "fleeingFelon": {
-        "section": "legal", "scope": "household", "path": "legal.fleeing_felon_or_parole_violation",
-        "question": "Is anyone in your household breaking a condition of probation or parole, or running from a felony charge, and being actively looked for by police?",
-        "explanation": "The law requires us to ask everyone these questions",
-        "example": "",
-        "input": "who",
-        "askIf": null
-    },
-    "courtParoleViolation": {
-        "section": "legal", "scope": "household", "path": "legal.court_found_parole_violation",
-        "question": "Has a court found that anyone in your household is violating probation or parole?",
-        "explanation": "",
-        "example": "",
-        "input": "who",
-        "askIf": null
-    },
-    "snapFraud": {
-        "section": "legal", "scope": "household", "path": "legal.snap_fraud_disqualified",
-        "question": "Has anyone in your household ever been disqualified from SNAP for fraud or breaking program rules on purpose?",
-        "explanation": "",
-        "example": "",
-        "input": "who",
-        "askIf": null
-    },
-    "tradedForWeaponsOrDrugs": {
-        "section": "legal", "scope": "household", "path": "legal.traded_snap_for_weapons_or_drugs",
-        "question": "Since September 22, 1996, has anyone in your household been convicted of trading SNAP benefits for guns, ammunition, explosives or drugs?",
-        "explanation": "",
-        "example": "",
-        "input": "who",
-        "askIf": null
-    },
-    "soldSnap": {
-        "section": "legal", "scope": "household", "path": "legal.sold_snap_500_or_more",
-        "question": "Since September 22, 1996, has anyone in your household been convicted of buying or selling $500 or more of SNAP benefits?",
-        "explanation": "",
-        "example": "",
-        "input": "who",
-        "askIf": null
-    },
-    "duplicateSnap": {
-        "section": "legal", "scope": "household", "path": "legal.received_duplicate_snap",
-        "question": "Since September 22, 1996, has anyone in your household been convicted of getting SNAP in more than one place at the same time by lying about who they are or where they live?",
-        "explanation": "",
-        "example": "",
-        "input": "who",
-        "askIf": null
-    },
 
+    "legalFlags": {
+        "section": "legal", "scope": "household",
+        "question": "Do any of these apply to anyone in your household?",
+        "explanation": "The law requires us to ask everyone these questions. Most people choose none of these",
+        "example": "",
+        "input": "checklist",
+        "items": [
+            { "path": "legal.fleeing_felon_or_parole_violation", "label": "Is breaking a condition of probation or parole, or running from a felony charge, and being actively looked for by police", "who": true },
+            { "path": "legal.court_found_parole_violation", "label": "Has been found by a court to be violating probation or parole", "who": true },
+            { "path": "legal.snap_fraud_disqualified", "label": "Has ever been disqualified from SNAP for fraud or breaking program rules on purpose", "who": true },
+            { "path": "legal.traded_snap_for_weapons_or_drugs", "label": "Since September 22, 1996, was convicted of trading SNAP for guns, ammunition, explosives or drugs", "who": true },
+            { "path": "legal.sold_snap_500_or_more", "label": "Since September 22, 1996, was convicted of buying or selling $500 or more of SNAP", "who": true },
+            { "path": "legal.received_duplicate_snap", "label": "Since September 22, 1996, was convicted of getting SNAP in more than one place at once by lying about who they are or where they live", "who": true }
+        ],
+        "noneLabel": "None of these apply",
+        "askIf": null
+    },
     "wantsAuthorizedRep": {
         "section": "final", "scope": "household", "path": "authorized_rep.wants_rep",
         "question": "Do you want someone outside your household to be able to apply for you or use an EBT card to buy food for you?",

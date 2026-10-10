@@ -143,7 +143,8 @@ export function makeEmptyApplicant() {
     application: {
       type: field(),                       // "apply" | "recertify"
       notice_language: field(),            // "spanish_english" | "english"
-      alt_format: field(),                 // "none" | "large_print" | "data_cd" | "audio_cd" | "braille"
+      needs_alt_format: field(),           // blind/visually impaired and wants another format
+      alt_format: field(),                 // "large_print" | "data_cd" | "audio_cd" | "braille"; only if needs_alt_format
     },
     extra: {
       phone: field(),

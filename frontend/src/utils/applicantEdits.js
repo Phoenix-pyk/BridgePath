@@ -5,7 +5,9 @@
 // source "user".
 
 import { field, makeAsset, makeChildSupportPayment, makeIncome, makeMember } from "./applicantModel.js";
-import { QUESTION_BANK, ROW_ARRAYS, getIn, splitPath, whoFlagMembers } from "./questionQueue.js";
+import {
+    QUESTION_BANK, ROW_ARRAYS, ROW_SOURCES, checklistItems, getIn, splitPath, whoFlagMembers,
+} from "./questionQueue.js";
 
 // Immutable set at a path of keys / array indexes
 function setIn(obj, path, value) {
@@ -36,11 +38,12 @@ function fullName(member) {
     return [member.first_name.value, member.last_name.value].filter(Boolean).join(" ");
 }
 
-function newRow(scope, entry, qid) {
-    const tags = { _added_by: qid };
+function newRow(source, sourceId) {
+    const scope = source.addRows;
+    const tags = { _added_by: sourceId };
     if (scope === "income") return makeIncome(tags);
     if (scope === "child_support") return makeChildSupportPayment(tags);
-    const types = entry.rowTypes || null;
+    const types = source.rowTypes || null;
     return makeAsset({
         ...tags,
         _row_types: types,  // limits the "What kind is it?" options
@@ -48,14 +51,24 @@ function newRow(scope, entry, qid) {
     });
 }
 
-export function addRow(applicant, qid) {
-    const entry = QUESTION_BANK[qid];
-    return updateIn(applicant, ROW_ARRAYS[entry.addRows], (rows) => [...rows, newRow(entry.addRows, entry, qid)]);
+// sourceId: a ROW_SOURCES id (the addRows question's qid, or a checklist item's id)
+export function addRow(applicant, sourceId) {
+    const source = ROW_SOURCES[sourceId];
+    return updateIn(applicant, ROW_ARRAYS[source.addRows], (rows) => [...rows, newRow(source, sourceId)]);
 }
 
-function removeRowsAddedBy(applicant, qid) {
-    const entry = QUESTION_BANK[qid];
-    return updateIn(applicant, ROW_ARRAYS[entry.addRows], (rows) => rows.filter((r) => r._added_by !== qid));
+function removeRowsAddedBy(applicant, sourceId) {
+    const source = ROW_SOURCES[sourceId];
+    return updateIn(applicant, ROW_ARRAYS[source.addRows], (rows) => rows.filter((r) => r._added_by !== sourceId));
+}
+
+// A yes on a row source adds its first row; a no removes the rows it added
+function syncRows(applicant, sourceId, yes) {
+    const rows = getIn(applicant, ROW_ARRAYS[ROW_SOURCES[sourceId].addRows]);
+    const hasOwnRows = rows.some((r) => r._added_by === sourceId);
+    if (yes && !hasOwnRows) return addRow(applicant, sourceId);
+    if (!yes) return removeRowsAddedBy(applicant, sourceId);
+    return applicant;
 }
 
 // has_snap_disqualification comes from the six legal "who" questions:
@@ -76,10 +89,31 @@ export function syncDerived(applicant) {
 
 // Save one answer. `value` depends on the input type:
 //   who → { answer: bool, who: [memberIds] };  whoFlag → [memberIds];
+//   checklist → { checked: [itemPaths], who: { itemPath: [memberIds] } };
 //   everything else → the plain value (or the entry's skipValue).
 export function applyAnswer(applicant, item, value) {
     const entry = QUESTION_BANK[item.qid];
     let next = applicant;
+
+    if (entry.input === "checklist") {
+        const base = basePath(next, item);
+        const member = item.scope === "member" ? getIn(next, base) : undefined;
+        const checked = new Set(value.checked);
+        for (const line of checklistItems(entry, { applicant: next, member })) {
+            const yes = checked.has(line.path);
+            const target = [...base, ...splitPath(line.path)];
+            if (line.who) {
+                next = setIn(next, target, {
+                    answer: field(yes, "user"),
+                    who: field(yes ? value.who?.[line.path] || [] : [], "user"),
+                });
+            } else {
+                next = setIn(next, target, field(yes ? (line.checked ?? true) : (line.unchecked ?? false), "user"));
+            }
+            if (line.addRows) next = syncRows(next, line.id, yes);
+        }
+        return syncDerived(next);
+    }
 
     if (entry.input === "whoFlag") {
         const chosen = new Set(value);
@@ -113,11 +147,7 @@ export function applyAnswer(applicant, item, value) {
         next = setIn(next, splitPath(path), field(fixed, "user"));
     }
 
-    if (entry.addRows) {
-        const hasOwnRows = getIn(next, ROW_ARRAYS[entry.addRows]).some((r) => r._added_by === item.qid);
-        if (value === true && !hasOwnRows) next = addRow(next, item.qid);
-        if (value !== true) next = removeRowsAddedBy(next, item.qid);
-    }
+    if (entry.addRows) next = syncRows(next, item.qid, value === true);
 
     return syncDerived(next);
 }

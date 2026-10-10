@@ -176,7 +176,8 @@ app/services/analytics.py (telemetry)              BridgePathExtractionPayload (
 - **`src/utils/applicantEdits.js`** — write side, immutable, all `source: "user"`: `applyAnswer(applicant, item,
   value)` (also syncs income `individual_name` from `member_id`, applies `alsoSet`, adds/removes `addRows` rows, and
   re-derives `has_snap_disqualification` from `legal.*` via `syncDerived`), `addRow`, `addPerson`, `removePerson`,
-  `confirmRoster`. User-added rows carry bare `_added_by` (the addRows question id) and asset rows `_row_types`.
+  `confirmRoster`. User-added rows carry bare `_added_by` (the row source id: an addRows question's qid or a checklist
+  item's `id`, see `ROW_SOURCES` in questionQueue.js) and asset rows `_row_types`.
 
 - **`src/utils/documentScanner.js`** — `pickFile(usePhoneCamera)` opens a native file input (or camera capture
   on mobile via `input.capture = "environment"`) and client-side validates type (jpg/png/pdf) and size (≤10MB)
@@ -193,7 +194,7 @@ app/services/analytics.py (telemetry)              BridgePathExtractionPayload (
     `ResultsScreen`.
   - `USE_MOCK` (currently `false`) makes both return canned nested-shape data without the backend.
 
-- **`src/data/QuestionBank.json`** — every LDSS-4826 question (99 entries) plus the eligibility rules' inputs, keyed
+- **`src/data/QuestionBank.json`** — every LDSS-4826 question (83 entries; related yes/no facts are grouped into `checklist` pages to keep the questionnaire short — about 23 pages for one person with all documents, 35 with none) plus the eligibility rules' inputs, keyed
   by question id. **File order is asking order**, grouped by `section` (`basics` → `roster` → `person` → `household`
   → `income` → `resources` → `housing` → `expenses` → `legal` → `final`). Each entry has `question` (`{name}` =
   the member's first name), `explanation`, `example`, `input`, optional `options` (`[{value, label}]`), and:
@@ -213,6 +214,14 @@ app/services/analytics.py (telemetry)              BridgePathExtractionPayload (
     members; writes `{answer, who}`), `whoFlag` (household-scope; pick members among those passing `memberAskIf`, and
     `path` is a *member* field set `true` for picked / `false` for the rest — used for pregnancy and work-limiting
     conditions, asked once for the household like the paper form instead of per person).
+  - `checklist` input — one "Do any of these apply?" page for several facts. No `path`; instead `items: [{path,
+    label, askIf?, who?, checked?, unchecked?, id?, addRows?, rowTypes?}]` plus `noneLabel`. Item paths start at the
+    member (member scope) or the `applicant` root (household scope). A ticked item saves `checked` (default `true`),
+    an unticked one `unchecked` (default `false`); `who: true` items are `{answer, who}` fields and ask which members
+    inline. Items can add rows like `addRows` entries (their `id` is the row source / "add another" id). The page is
+    answered when every applicable item is; a member checklist with no applicable items is skipped. Eligibility
+    `missing` paths that point at an item map back to its checklist (`findQuestionForPath` returns `{qid, entry,
+    item}`), and Results shows the item's label.
   - `questionSelf` — optional applicant wording when the automatic "{name}" → "you" rewrite reads wrong.
   - The queue asks a question when its target field's `value === null` and `askIf` passes (unknown age counts as
     passing). `member.has_snap_disqualification` has no question — `syncDerived` sets it from the `legal.*` answers.
