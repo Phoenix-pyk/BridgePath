@@ -61,7 +61,7 @@ app/services/analytics.py (telemetry)              BridgePathExtractionPayload (
   turned into a generic 502 (`"Couldn't read this file, try again."`) — raw exception details are never leaked
   to the client or logged.
 - **`app/services/gemini.py`** — exactly **one Gemini API call per uploaded document** (model
-  `gemini-2.5-flash`, `response_schema=BridgePathExtractionPayload`, `temperature=0.0`). The `genai.Client()` is
+  `gemini-3.5-flash-lite`, `response_schema=BridgePathExtractionPayload`, `temperature=0.0`). The `genai.Client()` is
   a lazily-constructed module-level singleton (`_get_client()`), not built at import time — this is deliberate:
   constructing it eagerly would make a missing/invalid API key crash the *entire app* at startup instead of
   just failing the first request. `tenacity` retries (max 3 attempts, exponential backoff) apply **only** to
