@@ -96,20 +96,36 @@ app/services/analytics.py (telemetry)              BridgePathExtractionPayload (
 placeholder `<p>`s. `main.jsx` wraps `<App />` in `BridgeProvider`.
 
 - **`src/context/BridgeContext.jsx`** — the single global state store (React Context), created via
-  `BridgeProvider`. Holds `fields` (an object keyed by a fixed flat field list — `fullName`, `dateOfBirth`,
-  `address`, `phone`, `householdSize`, `monthlyIncome`, `employer`, `payFrequency`, `workHours`,
-  `monthlyRent`, `paysUtilities`, `isStudent`, `enrollmentStatus`, `hasWorkStudy`, `hasChildUnder6`,
-  `inCTEProgram` — each `{ value, source }`), plus `documents`, `questionQueue`, `currentQuestion`, `results`,
-  `fixing`, and `forms`, all with setters and a `reset()`.
+  `BridgeProvider`. Holds `applicant`, a nested object matching `BridgePathExtractionPayload`'s shape **by key
+  name** (`primary_address`, `mailing_address`, `household_members[]`, `incomes[]`, `shelter`, `assets[]`,
+  plus a frontend-only `extra: {}` bucket for fields with no backend-schema home yet, e.g. phone), plus
+  `documents`, `questionQueue`, `currentQuestion`, `results`, `fixing`, and `forms`, all with setters and a
+  `reset()`. This replaced an earlier flat, single-applicant `fields` shape — the nested shape was adopted
+  specifically because the real LDSS-2921/4826 fillable PDFs have row-indexed repeating fields per household
+  member/income source (confirmed via pypdf inspection of `app/templates/*.pdf`, e.g. `First Name1`/`First
+  Name2`, income `Row1`/`Row2`), which a flat single-applicant model cannot represent.
+- **`src/utils/mergeExtraction.js`** — `mergeExtraction(applicant, fields, documentType)` accumulates one
+  document's extracted `fields` into `applicant` without overwriting earlier documents' answers. The
+  applicant's own household-member record (`is_applicant: true`) is found-or-created and null-fields-only
+  merged, since the applicant is the one person expected to reappear across multiple document types (ID,
+  lease, paystub). Every other household member/income/asset is tagged with `_source_document_type` and
+  appended; re-uploading that same document type (the "fixing" flow) drops only its own prior contributions
+  before appending the new ones — no fuzzy name-matching is attempted across different document types, so two
+  different documents mentioning the same non-applicant household member can currently produce two entries
+  (left for human cleanup on a future review screen rather than guessed at automatically).
 - **`src/screens/ConsentScreen.jsx`** — static consent/disclosure screen (data collected, Gemini used to read
   documents, voice answers processed by Google, nothing is submitted on the user's behalf). Gates the "Continue"
   button on a single checkbox; still has lorem-ipsum placeholder body copy.
-- **`src/screens/intakeUpload.jsx`** — drives document upload against a checklist (`id`, `pay_stub`, `lease`,
-  `aid_letter`, or whatever subset `fixing.items` specifies when re-uploading a flagged document). Calls
-  `pickFile()` then `extract()`, rejects a document whose `documentType` isn't on the current checklist,
-  fills only currently-`null` fields in context (so an earlier document's answer is never overwritten), and
-  records each upload's status (`ok`/`flagged`) with its issues for display. "Continue" builds
-  `questionQueue` from `QuestionBank.json` keys whose field is still `null`.
+- **`src/screens/intakeUpload.jsx`** — **currently broken, not yet updated for the `applicant` shape above.**
+  It still destructures `fields`/`setFields` from `BridgeContext`, which no longer exist (`undefined`), and its
+  upload handler still runs the old flat null-check merge loop instead of calling `mergeExtraction`; its
+  `handleContinue` still reads `fields[name].value` for the old flat `QuestionBank` keys. This was a deliberate,
+  scoped-down change (ship the data-model shape + merge utility in isolation for review before touching every
+  consumer) — **do not assume this file works** until it's updated to: destructure `applicant`/`setApplicant`;
+  call `setApplicant(prev => mergeExtraction(prev, response.fields, response.documentType))` in the upload
+  handler; and give `handleContinue` at least a temporary stub (e.g. `setQuestionQueue([])`) until
+  `QuestionBank.json` is migrated to the nested shape (see below). Checklist-rejection logic and `setDocuments`
+  status tracking don't read `fields` and are unaffected.
 - **`src/utils/documentScanner.js`** — `pickFile(usePhoneCamera)` opens a native file input (or camera capture
   on mobile via `input.capture = "environment"`) and client-side validates type (jpg/png/pdf) and size (≤10MB)
   before resolving — a duplicate of the backend's own validation in `extract.py`, done client-side for instant
@@ -118,18 +134,21 @@ placeholder `<p>`s. `main.jsx` wraps `<App />` in `BridgeProvider`.
   `true`**, so it returns a canned `{ documentType: "pay_stub", fields: {...}, issues: [] }` after an 800ms
   delay instead of calling the real API — the real `fetch(BASE_URL + "/extract", ...)` path (`BASE_URL` from
   `VITE_API_URL`, default `http://localhost:8000`) is written but dead until someone flips `USE_MOCK` to `false`.
+  **Not yet updated**: the mock's `fields` is still the old flat shape (`fullName`, `monthlyIncome`, ...), which
+  doesn't match `mergeExtraction`'s expected nested shape (`household_members[]`, `incomes[]`, ...) — needs
+  updating to realistic nested mock documents before `intakeUpload.jsx` can be tested end-to-end again.
 - **`src/data/QuestionBank.json`** — one entry per frontend field name (`question`, `explanation`, `example`,
   `input` type, and an `askIf` for conditional follow-ups), used to generate the follow-up questionnaire for
-  whatever `fields` the uploaded documents didn't fill.
+  whatever fields the uploaded documents didn't fill. **Still keyed to the old flat field names** — hasn't been
+  migrated to reference the new nested `applicant` shape (e.g. via a `scope`/`path` pair per entry, resolved
+  once per household member/income source). Low priority: only needed once the `questions` screen (still an
+  unimplemented placeholder, see below) is actually built.
 
-**Known schema mismatch (not yet reconciled):** the frontend's `fields` keys are flat and applicant-centric
-(`fullName`, `monthlyIncome`, `employer`, ...), while the backend's real `BridgePathExtractionPayload`
-(`pydantic_schemas.py`) is nested and per-household-member (`household_members[]`, `incomes[]`, `shelter`,
-`assets[]`) with no `fullName`/`monthlyIncome` fields at all. `intakeUpload.jsx`'s field-merging logic only
-works today because `api.js`'s mock response happens to match the frontend's flat shape — wiring `USE_MOCK =
-false` against the real `/api/extract` response will silently fail to populate any fields until either the
-frontend maps the nested payload to its flat keys, or the two schemas are unified. Don't assume this has been
-handled just because both pieces exist.
+**Current known gap (actively being worked on, not yet fixed):** `BridgeContext.jsx` and `mergeExtraction.js`
+were updated to the nested, per-household shape described above, but their consumers were not updated in the
+same change (a deliberate scope decision to land the data-model change in isolation for review). Until
+`intakeUpload.jsx` and `api.js`'s mock are updated per the notes above, the upload screen does not function.
+Don't assume the frontend intake flow works end-to-end just because `BridgeContext.jsx` looks correct.
 
 ### Unimplemented stubs
 

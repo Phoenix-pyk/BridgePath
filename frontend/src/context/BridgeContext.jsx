@@ -3,35 +3,20 @@ import { createContext, useState } from "react";
 
 export const BridgeContext = createContext();
 
-const FIELD_NAMES = [
-  "fullName",
-  "dateOfBirth",
-  "address",
-  "phone",
-  "householdSize",
-  "monthlyIncome",
-  "employer",
-  "payFrequency",
-  "workHours",
-  "monthlyRent",
-  "paysUtilities",
-  "isStudent",
-  "enrollmentStatus",
-  "hasWorkStudy",
-  "hasChildUnder6",
-  "inCTEProgram",
-];
-
-function makeInitialFields() {
-  const fields = {};
-  for (const name of FIELD_NAMES) {
-    fields[name] = { value: null, source: null };
-  }
-  return fields;
+function makeEmptyApplicant() {
+  return {
+    primary_address: null,
+    mailing_address: null,
+    household_members: [],
+    incomes: [],
+    shelter: null,
+    assets: [],
+    extra: {},
+  };
 }
 
 export function BridgeProvider({ children }) {
-  const [fields, setFields] = useState(makeInitialFields);
+  const [applicant, setApplicant] = useState(makeEmptyApplicant);
   const [documents, setDocuments] = useState([]);
   const [questionQueue, setQuestionQueue] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -40,7 +25,7 @@ export function BridgeProvider({ children }) {
   const [forms, setForms] = useState([]);
 
   function reset() {
-    setFields(makeInitialFields());
+    setApplicant(makeEmptyApplicant());
     setDocuments([]);
     setQuestionQueue([]);
     setCurrentQuestion(0);
@@ -52,7 +37,7 @@ export function BridgeProvider({ children }) {
   return (
     <BridgeContext.Provider
       value={{
-        fields, setFields,
+        applicant, setApplicant,
         documents, setDocuments,
         questionQueue, setQuestionQueue,
         currentQuestion, setCurrentQuestion,
