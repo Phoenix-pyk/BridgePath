@@ -2,8 +2,8 @@ import { useContext, useState } from "react";
 import { BridgeContext } from "../context/BridgeContext.jsx";
 import { addRow, applyAnswer } from "../utils/applicantEdits.js";
 import {
-    QUESTION_BANK, SECTION_LABELS, checklistItems, findMember, findRow, getIn, itemKey, listItems, memberLabel,
-    pickPage, questionText, splitPath, whoFlagMembers,
+    QUESTION_BANK, SECTION_LABELS, checklistItems, findMember, findRow, fixingPages, getIn, itemKey, listItems,
+    memberLabel, pickPage, questionText, splitPath, whoFlagMembers,
 } from "../utils/questionQueue.js";
 
 const ADD_ANOTHER_TEXT = {
@@ -20,13 +20,18 @@ const ADD_ANOTHER_TEXT = {
 // answering moves to the next unanswered one. The pages are rebuilt from
 // `applicant` after every answer, so answers change what's asked
 // (e.g. "yes, I'm a student" adds the student questions).
+// In fixing mode (fixing.type === "question", from the results screen) only
+// the items being fixed and their follow-ups are pages.
 export default function QuestionScreen({ goNext }) {
-    const { applicant, setApplicant } = useContext(BridgeContext);
+    const { applicant, setApplicant, fixing } = useContext(BridgeContext);
     const [skipped, setSkipped] = useState(() => new Set());     // "Skip for now"
     const [doneAdding, setDoneAdding] = useState(() => new Set()); // addRows questions the user finished
     const [view, setView] = useState({ type: "next", from: 0, lastKey: null }); // see pickPage
+    const [initialKeys] = useState(() => new Set(listItems(applicant).map(itemKey)));
 
-    const items = listItems(applicant, { doneAdding });
+    const isFixing = fixing?.type === "question";
+    const allItems = listItems(applicant, { doneAdding });
+    const items = isFixing ? fixingPages(allItems, fixing.items, initialKeys) : allItems;
     const pageIndex = pickPage(items, view, skipped);
     const current = pageIndex === -1 ? null : items[pageIndex];
     const unanswered = items.filter((i) => !i.answered).length;
@@ -69,6 +74,18 @@ export default function QuestionScreen({ goNext }) {
 
     if (!current) {
         const firstUnanswered = items.findIndex((i) => !i.answered);
+        if (isFixing) {
+            return (
+                <div>
+                    <h1>{unanswered === 0 ? "Thanks, that's what we needed" : "You're at the end"}</h1>
+                    {unanswered > 0 && <p>{unanswered} still unanswered.</p>}
+                    {unanswered > 0 && <button onClick={() => goToPage(firstUnanswered)}>Go to first unanswered</button>}
+                    <button disabled={items.length === 0} onClick={() => goToPage(items.length - 1)}>Back</button>
+                    <button onClick={goNext}>Check my results again</button>
+                    {pager}
+                </div>
+            );
+        }
         return (
             <div>
                 <h1>{unanswered === 0 ? "That's everything" : "You're at the end"}</h1>

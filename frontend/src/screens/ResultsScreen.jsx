@@ -1,22 +1,8 @@
 import { useContext, useEffect, useState } from "react";
 import { BridgeContext } from "../context/BridgeContext.jsx";
 import { checkEligibility } from "../utils/api.js";
-import { findQuestionForPath, memberLabel, questionText } from "../utils/questionQueue.js";
-
-// Plain-language names for the proof eligibility asks for (factor names from
-// backend/app/services/document_requirements.py)
-const PROOF_LABELS = {
-    earned_income_employer: "Proof of job income, like recent pay stubs or a letter from the employer",
-    earned_income_self_employment: "Proof of self-employment income, like business records or a tax return",
-    income_from_rent_or_room_board: "Proof of rent paid to you by a roomer or boarder",
-    unearned_income_social_security: "Your Social Security or SSI award letter",
-    unearned_income_veterans_benefits: "Your veterans benefits letter",
-    unearned_income_uib: "Your unemployment benefits letter",
-    unearned_income_workers_compensation: "Your workers' compensation letter",
-    unearned_income_child_support: "Proof of child support you receive",
-    unearned_income_private_pension: "Your pension or annuity statement",
-    unearned_income_education_grants: "Your financial aid award letter",
-};
+import { DOCUMENT_TYPES } from "../data/documentTypes.js";
+import { answerAll, planFix } from "../utils/fixPlan.js";
 
 const STATUS_TITLES = {
     eligible: "Your household appears to qualify",
@@ -24,26 +10,16 @@ const STATUS_TITLES = {
     not_eligible: "Your household may not qualify",
 };
 
-function describeMissing(applicant, m) {
-    const person = m.memberIndex != null ? applicant.household_members[m.memberIndex] : null;
-    if (m.type === "document") {
-        const proof = PROOF_LABELS[m.item] ?? m.item.replaceAll("_", " ");
-        return person ? `${proof} (for ${memberLabel(person)})` : proof;
-    }
-    if (m.item === "household_members") return "Who lives in your household";
-    const found = findQuestionForPath(m.item);
-    if (!found) return m.item;
-    if (found.item) {
-        // One line of a checklist, e.g. "Gets disability benefits (...)"
-        return person ? `${memberLabel(person)}: ${found.item.label}?` : `${found.item.label}?`;
-    }
-    const text = questionText(found.entry, found.entry.scope === "member" ? person : null);
-    return person && found.entry.scope !== "member" ? `${text} (${memberLabel(person)})` : text;
+function uploadLabel(fix) {
+    const names = fix.items.map((d) => DOCUMENT_TYPES[d]?.label.toLowerCase() ?? d);
+    return names.length > 3 ? "Upload a document" : `Upload ${names.join(" or ")}`;
 }
 
 // Sends the finished applicant to /api/eligibility (through api.js) every
-// time it opens, and shows the result. "Try again" re-runs the check.
-export default function ResultsScreen({ goNext, goBack }) {
+// time it opens, and shows the result. Each missing item gets "Answer" and/or
+// "Upload" buttons (onFix → App sends the user to fix it, then back here,
+// which checks again).
+export default function ResultsScreen({ goNext, goBack, onFix }) {
     const { applicant, results, setResults } = useContext(BridgeContext);
     const [status, setStatus] = useState("loading"); // loading | done | error
     const [error, setError] = useState(null);
@@ -90,6 +66,8 @@ export default function ResultsScreen({ goNext, goBack }) {
     }
 
     const needsSomething = results.some((r) => r.status === "needs_something");
+    const plans = results.flatMap((r) => r.missing.map((m) => ({ m, plan: planFix(applicant, m) })));
+    const fixAllAnswers = answerAll(plans.map((p) => p.plan));
 
     return (
         <div>
@@ -100,9 +78,16 @@ export default function ResultsScreen({ goNext, goBack }) {
 
                     {result.missing.length > 0 && (
                         <ul>
-                            {result.missing.map((m) => (
-                                <li key={`${m.type}:${m.item}:${m.memberIndex}`}>{describeMissing(applicant, m)}</li>
-                            ))}
+                            {result.missing.map((m) => {
+                                const plan = planFix(applicant, m);
+                                return (
+                                    <li key={`${m.type}:${m.item}:${m.memberIndex}`}>
+                                        {plan.text}{" "}
+                                        {plan.answer && <button onClick={() => onFix(plan.answer)}>Answer</button>}
+                                        {plan.upload && <button onClick={() => onFix(plan.upload)}>{uploadLabel(plan.upload)}</button>}
+                                    </li>
+                                );
+                            })}
                         </ul>
                     )}
 
@@ -120,7 +105,10 @@ export default function ResultsScreen({ goNext, goBack }) {
                 application and interview.
             </p>
 
-            {needsSomething && <button onClick={goBack}>Answer the remaining questions</button>}
+            {fixAllAnswers && fixAllAnswers.items.length > 1 && (
+                <button onClick={() => onFix(fixAllAnswers)}>Answer all of these</button>
+            )}
+            {needsSomething && <button onClick={goBack}>Go through all the questions</button>}
             <button onClick={() => setAttempt((n) => n + 1)}>Check again</button>
             <button onClick={goNext}>Continue to my application forms</button>
         </div>

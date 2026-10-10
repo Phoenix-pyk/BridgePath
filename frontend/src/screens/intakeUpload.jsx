@@ -3,16 +3,24 @@ import { BridgeContext } from "../context/BridgeContext.jsx";
 import { CATEGORIES, DOCUMENT_TYPES } from "../data/documentTypes.js";
 import { pickFile } from "../utils/documentScanner.js";
 import { extract } from "../utils/api.js";
-import { mergeExtraction, removeUploads } from "../utils/mergeExtraction.js";
+import { mergeExtraction, removeUploads, replaceTypedIncomes } from "../utils/mergeExtraction.js";
+import { findMember, memberLabel } from "../utils/questionQueue.js";
 
+// Fixing mode (fixing.type === "document", from the results screen):
+//   fixing = { type: "document", items: [documentTypes], reason?, memberId?, proof?, replace? }
+// Only those document types are accepted. memberId: the upload fills that
+// person's missing details instead of adding new people. proof: the upload
+// proves income the user typed, so it replaces that typed income. replace:
+// it replaces earlier uploads of the same type (re-uploading a flagged document).
 export default function IntakeUpload({ goNext }) {
-    const { documents, fixing, setApplicant, setDocuments } = useContext(BridgeContext);
+    const { applicant, documents, fixing, setApplicant, setDocuments } = useContext(BridgeContext);
 
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState(null);
 
-    // When fixing, only show the documents that need to be re-uploaded
+    // When fixing, only show the documents that can fix what's missing
     const isFixing = fixing && fixing.type === "document";
+    const fixingFor = isFixing && fixing.memberId ? findMember(applicant, fixing.memberId) : null;
     const checklist = isFixing ? fixing.items : Object.keys(DOCUMENT_TYPES);
 
     async function handleUpload(useCamera) {
@@ -43,18 +51,22 @@ export default function IntakeUpload({ goNext }) {
                 return;
             }
 
-            // When fixing, this upload replaces earlier uploads of the same type.
-            // Otherwise it's added alongside them (e.g. two children's birth certificates).
+            // Normally an upload is added alongside earlier ones of the same type
+            // (e.g. two children's birth certificates); fixing.replace swaps them out.
             const uploadId = crypto.randomUUID();
-            const replacedIds = isFixing
+            const replacedIds = isFixing && fixing.replace
                 ? documents.filter((doc) => doc.type === response.documentType).map((doc) => doc.id)
                 : [];
+            const targetMemberId = isFixing ? fixing.memberId ?? null : null;
 
             // Add this document's data to the household profile without
             // overwriting answers from earlier documents
-            setApplicant((prev) =>
-                mergeExtraction(removeUploads(prev, replacedIds), response.fields, uploadId)
-            );
+            setApplicant((prev) => {
+                const merged = mergeExtraction(removeUploads(prev, replacedIds), response.fields, uploadId, { targetMemberId });
+                return isFixing && fixing.proof && targetMemberId
+                    ? replaceTypedIncomes(merged, uploadId, targetMemberId)
+                    : merged;
+            });
 
             setDocuments((prev) => [
                 ...prev.filter((doc) => !replacedIds.includes(doc.id)),
@@ -80,7 +92,9 @@ export default function IntakeUpload({ goNext }) {
 
     return (
         <div>
-            <h1>Upload your documents</h1>
+            <h1>{isFixing ? "Upload a document" : "Upload your documents"}</h1>
+            {isFixing && fixing.reason && <p>{fixing.reason}</p>}
+            {fixingFor && <p>This is for {memberLabel(fixingFor)}.</p>}
             {!isFixing && (
                 <p>Upload any of these that you have. The more you upload, the fewer questions we'll ask.</p>
             )}
@@ -129,7 +143,7 @@ export default function IntakeUpload({ goNext }) {
             {error && <p>{error}</p>}
 
             <button disabled={uploading} onClick={handleContinue}>
-                Continue
+                {isFixing ? "Back to my results" : "Continue"}
             </button>
         </div>
     );

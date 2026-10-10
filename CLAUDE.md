@@ -113,6 +113,12 @@ app/services/analytics.py (telemetry)              BridgePathExtractionPayload (
 `consent` → `ConsentScreen`, `upload` → `IntakeUpload`, `roster` → `RosterScreen`, `questions` → `QuestionScreen`,
 `results` → `ResultsScreen`, then `forms` is still an unimplemented placeholder `<p>`. `main.jsx` wraps `<App />` in `BridgeProvider`.
 
+**Fixing loop:** ResultsScreen's "Answer"/"Upload" buttons call `onFix(fix)`; App's `startFixing` stores it in
+context `fixing` and switches to `questions` (`fix.type === "question"`) or `upload` (`"document"`). Those screens'
+`goNext` is then App's `finishFixing` (clears `fixing`, back to `results`), and ResultsScreen re-checks eligibility on
+open. Shapes: `{type: "question", items: [{qid, memberId?, rowId?}]}` and `{type: "document", items: [documentTypes],
+memberId?, proof?, replace?, reason?}`.
+
 - **`src/context/BridgeContext.jsx`** — the single global state store (React Context), created via
   `BridgeProvider`. Holds `applicant` (shape defined in `utils/applicantModel.js`), plus `documents`,
   `questionQueue`, `currentQuestion`, `results`, `fixing`, and `forms`, all with setters and a `reset()`.
@@ -140,13 +146,20 @@ app/services/analytics.py (telemetry)              BridgePathExtractionPayload (
   when possible. `removeUploads(applicant, uploadIds)` drops those rows (and unlinks dangling `member_id`s) for the
   "fixing" re-upload flow; values already filled into the applicant/address/shelter are not reverted. No fuzzy
   name-matching of non-applicant people across documents, so duplicates are left for the roster screen.
+  Option `{targetMemberId}` (fixing a specific person): the document's person matching that member by name (else the
+  only/most likely one) fill-null merges into that member — never `is_applicant`/`relationship_to_applicant` for a
+  non-applicant — no one else on the document is added, and incomes with no name match link to that member.
+  `replaceTypedIncomes(applicant, uploadId, memberId)` removes that member's user-typed income rows of the same
+  `income_type` once a proof upload added one, so income isn't counted twice.
 - **`src/screens/ConsentScreen.jsx`** — static consent/disclosure screen (data collected, Gemini used to read
   documents, voice answers processed by Google, nothing is submitted on the user's behalf). Gates the "Continue"
   button on a single checkbox; still has lorem-ipsum placeholder body copy.
 - **`src/screens/intakeUpload.jsx`** — working. Each upload gets a `crypto.randomUUID()` id; calls
   `setApplicant(prev => mergeExtraction(removeUploads(prev, replacedIds), response.fields, uploadId))`. Normal uploads
-  are added alongside earlier ones of the same type (e.g. two birth certificates); in the "fixing" flow they replace
-  earlier uploads of that type. Rejects unrecognized documents (and, when fixing, documents not being re-uploaded);
+  are added alongside earlier ones of the same type (e.g. two birth certificates); they replace
+  earlier uploads of that type only if `fixing.replace`. In fixing mode it only accepts `fixing.items`, passes
+  `fixing.memberId` as `mergeExtraction`'s `targetMemberId`, and for `fixing.proof` calls `replaceTypedIncomes`; its
+  button reads "Back to my results". Rejects unrecognized documents (and, when fixing, other document types);
   `documents` holds `{id, type, status, issues}` per upload. Errors show `api.js`'s message (e.g. "Can't reach
   server" when the backend isn't running, or the backend's "Couldn't read this file, try again."). Continue goes to
   the roster.
@@ -159,15 +172,22 @@ app/services/analytics.py (telemetry)              BridgePathExtractionPayload (
   including answered ones to review/change. Back = previous page. After an answer or "Skip for now" it moves to the
   next unanswered page (`pickPage`, wrapping to earlier ones); the End page lists how many are still unanswered and
   has "See my results". Pages renumber as answers add/remove follow-ups. Local state only: `skipped`, `doneAdding`,
-  `view`. Unstyled, like the other screens.
-- **`src/screens/ResultsScreen.jsx`** — stage 1 of results: every time it opens (and on "Check again" / "Try
-  again") it calls `api.checkEligibility(applicant)`, stores `response.results` in context `results`, and shows each
-  benefit's status title + backend `reason`, the `missing` items as readable text (questions via
-  `findQuestionForPath` + `questionText`, documents via a local `PROOF_LABELS` map of `document_requirements.py`
-  factor names), and an estimate/right-to-apply disclaimer. "Answer the remaining questions" just returns to
-  `questions` (skipped questions reappear because skips are per-visit). Not built yet: per-item "Answer"/"Upload"
-  buttons via `fixing` (stage 2: `fixing: {type: "question", items}`; stage 3: missing documents → upload checklist,
-  which needs a factor → document-type mapping that doesn't exist in the frontend yet).
+  `view`. In fixing mode (`fixing.type === "question"`) the pages are only `fixing.items` plus follow-ups that appear
+  while answering them (`fixingPages`: items not present when the screen opened), and the end page says "Check my
+  results again". Unstyled, like the other screens.
+- **`src/screens/ResultsScreen.jsx`** — every time it opens (and on "Check again" / "Try again") it calls
+  `api.checkEligibility(applicant)`, stores `response.results` in context `results`, and shows each benefit's status
+  title + backend `reason` and an estimate/right-to-apply disclaimer. Each `missing` item is run through
+  `fixPlan.planFix` and shown as readable text with an **Answer** button (question pages that fill it) and/or an
+  **Upload …** button (document types that can supply it); "Answer all of these" combines every answerable item.
+  "Go through all the questions" returns to the full question screen.
+- **`src/utils/fixPlan.js`** — `planFix(applicant, missingItem)` → `{text, answer, upload}` (`answer`/`upload` are
+  `fixing` values or `null`): questions map via `findQuestionForPath` (+ the member from `memberIndex`; for income/
+  asset fields, every row of that person still missing the field); uploads via `data/fixSources.js`. Document
+  (proof) items get only Upload, with `proof: true`. `answerAll(plans)` merges answer items without duplicates.
+- **`src/data/fixSources.js`** — `FIELD_DOCUMENTS` (missing question path → document types that can fill it; only
+  fields the extraction schema reads, and no income/asset row fields so an upload never duplicates an income) and
+  `PROOF` (proof factor from `document_requirements.py` → plain-language `label` + `documents`).
 - **`src/utils/questionQueue.js`** — read side, pure: `listItems(applicant, {doneAdding})` (every applicable item
   in asking order, each with `answered`), `pickPage(items, view, skipped)` (which page to show),
   `buildQueue` (unanswered, unskipped items), `evalCond` (the `askIf` grammar), `questionText` (fills `{name}`; for the applicant rewrites
@@ -226,7 +246,8 @@ app/services/analytics.py (telemetry)              BridgePathExtractionPayload (
   - The queue asks a question when its target field's `value === null` and `askIf` passes (unknown age counts as
     passing). `member.has_snap_disqualification` has no question — `syncDerived` sets it from the `legal.*` answers.
 
-**Current known gaps:** the `forms` step is a placeholder; results has no per-item fix buttons yet; "Skip for now" answers are only
+**Current known gaps:** the `forms` step is a placeholder; a missing `household_members` (empty roster) has no fix
+button; "Skip for now" answers are only
 remembered for the current visit to the question screen; `data/applicantFullMock.json` and
 `extractFullMock.json` are fixtures for those future screens. `npm run lint` reports a few warnings (no errors).
 
@@ -247,6 +268,30 @@ therefore told it doesn't qualify.
   **Claude: whenever you see that `ELIGIBLE_CITIZEN_STATUSES` contains values beyond those four, check whether
   `citizenStatus`'s options include them; if not, tell Phoenix to update the question (or offer to do it) before
   anything else.** Delete this issue once both sides are done.
+
+### Post-MVP improvement ideas
+
+Not bugs; deliberately deferred until the end-to-end pipeline (upload → questions → eligibility → forms) works.
+
+- **Return `not_eligible` early when no missing answer could change it (eligibility side).** Today
+  `evaluate_snap` short-circuits only on two hard disqualifiers (not a NY resident, SNAP elsewhere); everything else
+  waits until every needed question is answered, so a clearly ineligible household is still told "we need a little
+  more information" (e.g. $10,000/month income while a child's date of birth is missing). Check each disqualifying
+  condition against its most generous possible case and stop early if it still fails. Examples:
+  - *Income:* known income over the limit for the largest possible household (everyone on the roster) at the
+    highest tier (200%, elderly/disabled/dependent-care).
+  - *No one can be in the SNAP unit:* every roster member is already known to be excluded (ineligible immigration
+    status, `has_snap_disqualification`, student 18–49 without an exemption, doesn't buy/prepare food with the
+    household) — today this only triggers once nothing is missing.
+  - Any other household-level rule added later (e.g. strikers, resource tests for households that don't get broad-based
+    categorical eligibility). Note most of these exclude *individuals*, not the household: only stop early when the
+    household as a whole can't qualify.
+- **Save "Skip for now" across visits** to the question screen (currently local state, so skipped questions reappear).
+- **Roster: merge duplicates** (two documents naming the same non-applicant person) instead of only "Remove".
+- **Review what documents filled in** before/after the questions: list `source: "document"` values with Edit, since a
+  misread value is never re-asked (only reachable today via its ✓ page).
+- **Empty roster fix button:** a missing `household_members` item on the results screen has no Answer button (it
+  should send the user to the roster).
 
 ### Unimplemented stubs
 

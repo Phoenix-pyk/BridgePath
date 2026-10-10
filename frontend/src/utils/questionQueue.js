@@ -217,6 +217,15 @@ export function pickPage(items, view, skipped = new Set()) {
     return -1;
 }
 
+// Fixing mode (results → "Answer"): only the items being fixed, plus any
+// follow-ups that appear while answering them (items that weren't in the list
+// when fixing started, e.g. the student exemption after "yes, I'm a student").
+// fixItems: [{ qid, memberId?, rowId? }]
+export function fixingPages(items, fixItems, initialKeys) {
+    const fixKeys = new Set(fixItems.map((f) => itemKey({ kind: "question", ...f })));
+    return items.filter((i) => fixKeys.has(itemKey(i)) || !initialKeys.has(itemKey(i)));
+}
+
 // What's left to ask. `skipped` holds itemKeys the user put off ("Skip for
 // now"); `doneAdding` holds addRows question ids the user finished adding to.
 export function buildQueue(applicant, { skipped = new Set(), doneAdding = new Set() } = {}) {

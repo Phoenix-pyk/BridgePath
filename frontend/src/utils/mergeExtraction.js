@@ -45,6 +45,39 @@ function findMemberId(members, individualName) {
   return match ? match.id : null;
 }
 
+// Fill one existing person's empty fields from a document's person
+function fillPerson(member, incoming, keys = MEMBER_DOCUMENT_KEYS) {
+  const merged = fillEmpty(member, incoming, keys);
+  // other_names is a list: union document names in rather than only filling when empty
+  const names = [...new Set([...(member.other_names.value || []), ...(incoming.other_names || [])])];
+  if (names.length > (member.other_names.value || []).length) {
+    merged.other_names = field(names, member.other_names.source ?? "document");
+  }
+  return merged;
+}
+
+// Fixing a specific person (e.g. uploading Leo's birth certificate for his
+// missing date of birth): the document's person fills that member instead of
+// becoming a new row, and nobody else on the document is added.
+function mergeIntoTarget(members, incomingMembers, targetMemberId) {
+  const idx = members.findIndex((m) => m.id === targetMemberId);
+  const people = incomingMembers || [];
+  if (idx === -1 || people.length === 0) return members;
+  const target = members[idx];
+  const targetName = normName(target.first_name.value, target.last_name.value);
+  const incoming =
+    people.find((p) => targetName && normName(p.first_name, p.last_name) === targetName) ??
+    (target.is_applicant.value === true ? people.find((p) => p.is_applicant) : null) ??
+    (people.length === 1 ? people[0] : people.find((p) => !p.is_applicant) ?? people[0]);
+  // Don't let a document's "Self" / applicant flag describe someone else
+  const keys = target.is_applicant.value === true
+    ? MEMBER_DOCUMENT_KEYS
+    : MEMBER_DOCUMENT_KEYS.filter((k) => k !== "is_applicant" && k !== "relationship_to_applicant");
+  const next = [...members];
+  next[idx] = fillPerson(target, incoming, keys);
+  return next;
+}
+
 function mergeMembers(members, incomingMembers, uploadId) {
   const next = [...members];
   for (const incoming of incomingMembers || []) {
@@ -54,13 +87,7 @@ function mergeMembers(members, incomingMembers, uploadId) {
         next.unshift(fillEmpty(makeMember({ is_applicant: field(true, "user") }), incoming, MEMBER_DOCUMENT_KEYS));
         continue;
       }
-      const merged = fillEmpty(next[idx], incoming, MEMBER_DOCUMENT_KEYS);
-      // other_names is a list: union document names in rather than only filling when empty
-      const names = [...new Set([...(next[idx].other_names.value || []), ...(incoming.other_names || [])])];
-      if (names.length > (next[idx].other_names.value || []).length) {
-        merged.other_names = field(names, next[idx].other_names.source ?? "document");
-      }
-      next[idx] = merged;
+      next[idx] = fillPerson(next[idx], incoming);
     } else {
       // makeMember's is_applicant (false) counts as answered, so it isn't overwritten
       next.push(fillEmpty(makeMember({ _upload_id: uploadId }), incoming, MEMBER_DOCUMENT_KEYS));
@@ -82,15 +109,18 @@ function mergeShelter(shelter, incoming) {
   return next;
 }
 
-export function mergeExtraction(applicant, fields, uploadId) {
+// targetMemberId (optional): the upload is for this person (see mergeIntoTarget)
+export function mergeExtraction(applicant, fields, uploadId, { targetMemberId = null } = {}) {
   const top = fillEmpty(applicant, fields, ["primary_address", "mailing_address"]);
-  const household_members = mergeMembers(applicant.household_members, fields.household_members, uploadId);
+  const household_members = targetMemberId
+    ? mergeIntoTarget(applicant.household_members, fields.household_members, targetMemberId)
+    : mergeMembers(applicant.household_members, fields.household_members, uploadId);
 
   const incomes = [
     ...applicant.incomes,
     ...(fields.incomes || []).map((inc) => {
       const row = fillEmpty(makeIncome({ _upload_id: uploadId }), inc, INCOME_DOCUMENT_KEYS);
-      const memberId = findMemberId(household_members, inc.individual_name);
+      const memberId = findMemberId(household_members, inc.individual_name) ?? targetMemberId;
       if (memberId) row.member_id = field(memberId, "document");
       return row;
     }),
@@ -107,6 +137,21 @@ export function mergeExtraction(applicant, fields, uploadId) {
     incomes,
     assets,
     shelter: mergeShelter(applicant.shelter, fields.shelter),
+  };
+}
+
+// Proof upload for income the user typed in: once the document's income is in,
+// drop the typed rows of the same kind for that person so it isn't counted twice.
+export function replaceTypedIncomes(applicant, uploadId, memberId) {
+  const added = applicant.incomes.filter((r) => r._upload_id === uploadId && r.member_id.value === memberId);
+  if (added.length === 0) return applicant;
+  const types = new Set(added.map((r) => r.income_type.value));
+  return {
+    ...applicant,
+    incomes: applicant.incomes.filter((r) =>
+      !(r._upload_id === null && r.member_id.value === memberId && r.gross_amount.source === "user" &&
+        (types.has(r.income_type.value) || r.income_type.value === null))
+    ),
   };
 }
 
