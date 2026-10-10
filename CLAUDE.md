@@ -39,7 +39,17 @@ npm run dev       # vite dev server
 npm run build      # vite build
 npm run lint       # oxlint
 npm run preview
+npm test                # Vitest unit tests (tests/unit): questionnaire, paging, checklists, fixing, derived values, merge, api
+npm run test:e2e        # Playwright browser tests (tests/e2e): every results-screen scenario, clicked through
+npm run test:e2e:report # opens the HTML report: per-step screenshots + a full trace per test
 ```
+
+Unit tests import the real `src/utils` modules and drive the questionnaire with `tests/unit/helpers.js`
+(`runQuestionnaire` answers pages like QuestionScreen does). Browser tests (`tests/e2e/flow.js` helpers) answer
+questions by their visible heading and "Skip for now" everything else; `/api/extract` is answered with fixtures via
+`page.route` (no Gemini calls), while `/api/eligibility` is the real backend. `playwright.config.js` reuses running
+servers on :8000/:5173 or starts them (backend via `backend/venv` if present). One-time setup after `npm install`:
+`npx playwright install chromium`. Reports/results go to `tests/e2e/report|results` (gitignored).
 
 ## Architecture
 
@@ -277,13 +287,10 @@ remembered for the current visit to the question screen; `data/applicantFullMock
 
 ### Open cross-team issues
 
-**PDF filler gaps (`app/services/pdf_filler.py`, forms side, open).** Found by filling LDSS-4826 from a household
-produced by the real questionnaire; the frontend already sends everything needed:
-- `q__disabled_or_60` only ever gets "Yes": tick "No" when every member's `receives_disability_benefits` is answered
-  and nobody is 60+ (by `dob`).
-- Cash entered under "cash or bank accounts" as resource type `"other"` (label "Other (including cash)") is filed
-  under *other financial assets*; rows with `_added_by == "hasCashOrAccounts"` should count toward cash on hand (or
-  add a cash value to the backend `ResourceType` enum and the frontend options).
+**Forms not wired into the frontend yet (open).** `pdf_filler.py` fills LDSS-4826 correctly from the questionnaire's
+output (checked by filling it from a questionnaire-produced household; "disabled or 60+" gets a "No" once everyone's
+answer and DOB are known, and rows from the cash question typed `"other"` count as cash on hand via
+`_added_by == "hasCashOrAccounts"`), but:
 - Frontend still has no `/api/forms` client or forms screen. When adding `createForms` to `api.js`, send the **full**
   applicant (SSN, phones, addresses go on the form), not `forEligibility`'s stripped copy.
 

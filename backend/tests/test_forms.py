@@ -140,3 +140,33 @@ def test_logs_contain_no_applicant_data(caplog):
     text = caplog.text
     assert "event=forms_generated | benefit=SNAP" in text
     assert "Jane" not in text and "Fake St" not in text and "JVBER" not in text
+
+
+def test_disabled_or_60_no_once_everyone_is_known():
+    a = applicant()  # Jane 1990 and Leo 2018, neither gets disability benefits
+    fields = build_snap_fields(a)
+    assert fields.get("q__disabled_or_60__no") is True and "q__disabled_or_60__yes" not in fields
+    # Unknown for anyone (no answer or no DOB) -> left blank rather than guessing "No"
+    a["household_members"][1]["receives_disability_benefits"] = None
+    assert not any(k.startswith("q__disabled_or_60") for k in build_snap_fields(a))
+    a = applicant()
+    a["household_members"][1]["dob"] = None
+    assert not any(k.startswith("q__disabled_or_60") for k in build_snap_fields(a))
+    # Someone 60+ -> "Yes" with their name
+    a = applicant()
+    a["household_members"][1]["dob"] = "1950-01-01"
+    fields = build_snap_fields(a)
+    assert fields.get("q__disabled_or_60__yes") is True and fields.get("q__disabled_or_60__who") == "Leo Testperson"
+
+
+def test_cash_entered_as_other_counts_as_cash_on_hand():
+    a = applicant()
+    a["assets"] = [
+        {"resource_type": "checking", "amount": 450.0, "member_id": "m0"},
+        {"resource_type": "other", "amount": 50.0, "member_id": "m0", "_added_by": "hasCashOrAccounts"},
+        {"resource_type": "other", "amount": 900.0, "member_id": "m0", "_added_by": "hasFinancialAssets"},
+    ]
+    fields = build_snap_fields(a)
+    assert fields["resources__cash_on_hand__amount"] == "500.00"
+    assert fields["resources__other_financial_assets__amount"] == "900.00"
+    assert fields["resources__other_financial_assets__type"] == "Other"

@@ -34,31 +34,94 @@ frontend/   Vite + React intake app
 
 ## Getting started
 
+> **Copying commands:** every command below is on its own line with no trailing `# comment`. On macOS's default
+> shell (zsh), a pasted `# ...` is **not** treated as a comment and becomes extra arguments, e.g.
+> `error: too many arguments for 'show-report'`. Paste commands as they are, one line at a time if needed.
+
 ### Backend
 
 Requires Python 3. A Gemini API key (https://aistudio.google.com/apikey) is only needed for document uploads;
-eligibility works without one.
+eligibility works without one. Run everything from inside `backend/`, because imports are rooted at `app.*`.
 
 ```bash
 cd backend
-python -m venv venv && source venv/bin/activate   # optional, venv/ is gitignored
+python -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 echo "GEMINI_API_KEY=your-key-here" > .env
-uvicorn app.main:app --reload                      # http://localhost:8000
-python -m pytest tests                             # eligibility tests, no API key needed
+uvicorn app.main:app --reload
 ```
 
-Run these from inside `backend/`, because imports are rooted at `app.*`.
+| Command | What it does |
+| --- | --- |
+| `python -m venv venv` / `source venv/bin/activate` | Optional virtualenv (`venv/` is gitignored) |
+| `pip install -r requirements.txt` | Installs dependencies. Re-run it after pulling, since new ones get added (e.g. `pypdf`, `pytest`) |
+| `uvicorn app.main:app --reload` | Starts the API at http://localhost:8000 |
 
 ### Frontend
 
 ```bash
 cd frontend
 npm install
-npm run dev       # Vite dev server, http://localhost:5173
-npm run build     # production build
-npm run lint      # oxlint
+npm run dev
 ```
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Dev server at http://localhost:5173 |
+| `npm run build` | Production build |
+| `npm run lint` | oxlint |
+
+## Running the tests
+
+There are three test suites, one per tool:
+
+| Suite | Tool | Where | What it covers |
+| --- | --- | --- | --- |
+| Backend tests | **pytest** | `backend/tests/test_eligibility.py`, `test_forms.py` | SNAP eligibility rules and the `/api/eligibility` route; LDSS-4826 PDF filling and the `/api/forms` route |
+| Frontend unit tests | **Vitest** | `frontend/tests/unit/*.test.js` | `questionBank` (QuestionBank.json checked against the data model), `questionnaire` (a full household run), `paging`, `mergeExtraction` (uploads), `derived` (automatic answers), `fixing` (Answer / Upload buttons), `api` (what's sent to the backend) |
+| Frontend browser tests | **Playwright** | `frontend/tests/e2e/results.spec.js` (helpers in `flow.js`) | 8 results-screen scenarios clicked through in Chrome, with screenshots |
+
+**Backend** (eligibility + forms, no API key needed), from `backend/`:
+
+```bash
+python -m pytest tests
+```
+
+**Frontend unit tests** (questionnaire logic, fixing, merging uploads, `api.js`), from `frontend/`:
+
+```bash
+npm test
+```
+
+**Frontend browser tests** (Playwright clicks through the real app in Chrome), from `frontend/`. One-time setup
+after `npm install`:
+
+```bash
+npx playwright install chromium
+```
+
+Run the scenarios, then open the report:
+
+```bash
+npm run test:e2e
+```
+
+```bash
+npm run test:e2e:report
+```
+
+In the report, click a test, then look under **Attachments** for a screenshot of each step, or open **Trace** to
+replay every click. The scenarios cover: not eligible (not a NY resident, income over the limit), eligible, and each
+"needs something" case with its Answer / Upload fix, plus "can't reach server". They start the backend and frontend
+themselves if those aren't already running, use the real eligibility backend, and answer uploads with fixtures
+instead of calling Gemini.
+
+| Also useful | What it does |
+| --- | --- |
+| `npx playwright test --headed` | Watch the browser click through |
+| `npx playwright test --ui` | Step through tests interactively |
+| `npx playwright test -g "Answer all"` | Run only tests whose name matches |
 
 The frontend calls the backend at `VITE_API_URL` (default `http://localhost:8000`). If the backend isn't running,
 uploads show "Can't reach server". To work on the UI without the backend, set `USE_MOCK = true` in
@@ -146,7 +209,7 @@ uses quota.
 python backend/scripts/check_extraction_coverage.py backend/scripts/sample_docs/*
 ```
 
-The backend has eligibility tests (`python -m pytest tests` in `backend/`); the frontend has no test suite yet.
+See [Running the tests](#running-the-tests).
 
 ## Next up
 

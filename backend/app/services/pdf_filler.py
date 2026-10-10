@@ -40,6 +40,10 @@ LIVING_BOXES = {
     "no_permanent": "no_permanent_residence", "with_relatives": "live_with_others",
 }
 HEAT_BOXES = {"gas", "electric", "oil", "wood", "coal", "propane"}
+CASH_TYPES = {"checking", "savings"}
+# The frontend's "cash or bank accounts" question (QuestionBank resourceFlags item) tags the rows it adds with
+# _added_by; its "Other (including cash)" type is cash on hand, not an "other financial asset".
+CASH_ROW_SOURCE = "hasCashOrAccounts"
 # household yes/no + "who" questions in `legal.*` -> form question name
 LEGAL_QUESTIONS = {
     "fleeing_felon_or_parole_violation": "probation_fleeing_felon",
@@ -243,12 +247,17 @@ def _fill_resources(f: _Fields, members: list[dict], assets: list[dict], househo
     def owner(rows: list[dict]) -> str | None:
         return _names(members, [r.get("member_id") for r in rows if r.get("member_id")])
 
-    cash = [r for r in assets if r.get("resource_type") in ("checking", "savings")]
+    def is_cash(r: dict) -> bool:
+        return r.get("resource_type") in CASH_TYPES or (
+            r.get("resource_type") == "other" and r.get("_added_by") == CASH_ROW_SOURCE
+        )
+
+    cash = [r for r in assets if is_cash(r)]
     if cash:
         f.text("resources__cash_on_hand__amount", _money(sum(_num(r.get("amount")) or 0 for r in cash)))
         f.text("resources__cash_on_hand__belongs_to", owner(cash))
 
-    other = [r for r in assets if r.get("resource_type") in ASSET_LABELS]
+    other = [r for r in assets if r.get("resource_type") in ASSET_LABELS and not is_cash(r)]
     if other:
         f.text("resources__other_financial_assets__type", ", ".join(dict.fromkeys(ASSET_LABELS[r["resource_type"]] for r in other)))
         f.text("resources__other_financial_assets__amount", _money(sum(_num(r.get("amount")) or 0 for r in other)))
@@ -347,6 +356,11 @@ def _fill_questions(f: _Fields, a: dict, members: list[dict]) -> None:
     if qualifiers:
         f.yesno("disabled_or_60", True, _who(members, disabled))
         f.yesno("medical_bills", _any_all(qualifiers, "has_medical_bills"))
+    elif members and all(
+        isinstance(m.get("receives_disability_benefits"), bool) and _age(m.get("dob")) is not None for m in members
+    ):
+        # Everyone's disability answer and age are known and nobody qualifies
+        f.yesno("disabled_or_60", False)
 
     spend = [m for m in members if m.get("has_medicaid_spenddown") is True]
     f.yesno("medicaid_spenddown", _any_all(members, "has_medicaid_spenddown"), _who(members, lambda m: m.get("has_medicaid_spenddown") is True))
