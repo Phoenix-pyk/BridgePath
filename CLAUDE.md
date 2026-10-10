@@ -27,7 +27,7 @@ Copy `backend/.env.example` to `backend/.env` and set `GEMINI_API_KEY` (get one 
 https://aistudio.google.com/apikey) before running — `app/main.py` calls `load_dotenv()` before importing
 anything that constructs a Gemini client.
 
-Tests (eligibility only; 51 tests, no live API key needed): `python -m pytest tests` from `backend/`. There is no lint
+Tests (eligibility + forms; 69 tests, no live API key needed): `python -m pytest tests` from `backend/`. There is no lint
 config. `/api/extract` has no tests; to sanity-check it use `TestClient` from `fastapi.testclient` against
 `app.main.app`. `scripts/check_extraction_coverage.py` + `scripts/sample_docs/` are for checking extraction coverage.
 
@@ -45,7 +45,7 @@ npm run preview
 
 ### Backend request flow
 
-`app/main.py` loads `.env`, builds the FastAPI app, and mounts routers under `/api` (`POST /api/extract`, `POST /api/eligibility`).
+`app/main.py` loads `.env`, builds the FastAPI app, and mounts routers under `/api` (`POST /api/extract`, `POST /api/eligibility`, `POST /api/forms`).
 **Import order matters**: `load_dotenv()` must run before `app.routes.extract` is imported, because
 `app.services.gemini` reads `GEMINI_API_KEY` when its client is constructed.
 
@@ -93,6 +93,17 @@ app/services/analytics.py (telemetry)              BridgePathExtractionPayload (
   no shelter/deduction math). Income the user typed (source `"user"`) yields a `missing` `document` item
   (factor names from `document_requirements.py`); unanswered facts yield `missing` `question` items using paths like
   `household_members[].dob` with a `memberIndex`.
+- **`app/routes/forms.py`** — `POST /api/forms`, body `{applicant, benefits: ["SNAP"]}` (same `{value, source}` applicant tree as
+  `/eligibility`; reuses its `split_values_and_sources`). Parses by hand (no 422 echo). 400 `"No benefits to create forms for."` /
+  `"Unknown benefit."` / `"No information to fill the forms."`; any fill failure is a generic 500
+  `"Couldn't create your forms, try again."`. Returns `{forms: [{name: "LDSS-4826", pdf: <base64>}]}` — one filled form per benefit,
+  **no cover sheet yet** (`cover_sheet.py` is still an empty stub; append its entry to the list when built). PDFs stay in memory;
+  telemetry is `log_forms_event(benefit)` only.
+- **`app/services/pdf_filler.py`** — `fill_form(benefit, values) -> (form name, pdf bytes)`; `TEMPLATES` maps SNAP to
+  `4826_fillable_named.pdf`. Not a name-for-name match: `build_snap_fields` explicitly maps the applicant shape to the PDF's field
+  names (address string is split into street/apt/city/zip; row 0 of the household table uses checkboxes, rows 1+ use "Y"/"N" text;
+  `q__*` yes/no/who are derived from `household.*`, `legal.*` and per-member flags; tables are capped at 8 people / 3 incomes /
+  2 vehicles / 4 education rows). Signature/date boxes are left blank for the applicant. Raises `UnknownBenefitError` for an unknown benefit.
 - **`app/services/snap_standards.py`** — numeric constants (FY2027 poverty-level-based gross limits, tier
   percentages, eligible immigration statuses). Update each October. Some values are marked UNVERIFIED in comments.
 - **`tests/`** — `test_eligibility.py` (51 tests) and `applicant_fixture.py` (a fictional full applicant plus
@@ -105,7 +116,15 @@ app/services/analytics.py (telemetry)              BridgePathExtractionPayload (
   still-missing fields — that aggregation feature doesn't exist yet.
 - **`app/templates/`** — reference inputs, not code: `1301_ins.pdf` / `4826A_ins.pdf` are the official
   instructions for LDSS-2921 / LDSS-4826 (source of truth for schema/eligibility-factor design); `2921_fillable.pdf`
-  / `4826_fillable.pdf` are the blank fillable form PDFs, presumably the eventual target of `pdf_filler.py`.
+  is the blank fillable LDSS-2921 (field names still the Acrobat defaults).
+  `4826_fillable_named.pdf` is the LDSS-4826 fillable form, the eventual target of `pdf_filler.py`; it is the
+  single source of truth (edit it directly in Acrobat, keep names unique). `4826_fillable_original.pdf` is the
+  untouched pre-rename copy, and `4826_field_names.csv` is the inventory of its 298 fields (page, position,
+  printed label, original name, `NEW_NAME`). Field-name convention, separator `__`, 0-based row index:
+  `household_members__i__*`, `incomes__i__*`, `shelter__*`, `primary_address__*` / `mailing_address__*`
+  mirror the applicant shape; `q__<topic>__yes|no|who` are household yes/no questions; `form__*` are
+  signatures/notice options; `education__i__*`, `vehicles__i__*`, `resources__*` are form-only tables; `extra__*`
+  matches the frontend `extra` bucket. Every checkbox is standalone (never a radio group) with export value `Yes`.
 
 ### Frontend architecture
 
@@ -295,9 +314,7 @@ Not bugs; deliberately deferred until the end-to-end pipeline (upload → questi
 
 ### Unimplemented stubs
 
-`app/routes/forms.py`, `app/routes/speak.py`, `app/services/cover_sheet.py`, `app/services/elevenlabs.py`, and
-`app/services/pdf_filler.py` all exist as empty 0-byte files — placeholders for future work (form-filling,
-text-to-speech via ElevenLabs, cover sheet generation). Don't assume any logic exists in them.
+`app/routes/speak.py`, `app/services/cover_sheet.py` and `app/services/elevenlabs.py` exist as empty 0-byte files — placeholders for future work (text-to-speech via ElevenLabs, cover sheet generation). Don't assume any logic exists in them.
 
 ### Directory naming
 

@@ -20,6 +20,7 @@ pyasn1_modules==0.4.2
 pycparser==3.11
 pydantic==2.14.0
 pydantic_core==2.50.0
+pypdf==6.20.0
 python-dotenv==1.2.4
 python-multipart==0.0.32
 requests==2.34.2
