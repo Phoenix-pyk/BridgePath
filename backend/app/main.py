@@ -11,6 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routes.extract import router as extract_router
+from app.routes.eligibility import router as eligibility_router
 
 logging.basicConfig(level=logging.INFO)
 
@@ -25,3 +26,4 @@ app.add_middleware(
 )
 
 app.include_router(extract_router, prefix="/api")
+app.include_router(eligibility_router, prefix="/api")

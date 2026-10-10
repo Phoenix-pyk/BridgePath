@@ -1,5 +1,5 @@
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
-const USE_MOCK = true; //Set to false when backend is ready
+const USE_MOCK = false; //Set to false when backend is ready
 
 async function request(path, options){
     let response;
