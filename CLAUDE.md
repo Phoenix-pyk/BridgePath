@@ -8,8 +8,9 @@ BridgePath AI extracts structured applicant data (household members, income, she
 uploaded documents (paystubs, IDs, leases, utility bills, bank statements, benefit award letters, etc.) using
 Gemini Vision, to pre-fill the NYS public assistance applications **LDSS-2921** (Common Application — PA/SNAP/
 Medicaid/Child Care/Services) and **LDSS-4826** (SNAP-only). The repo is a `backend/` (FastAPI + Gemini) and
-`frontend/` (Vite + React) split. The frontend now has a step-based intake flow (consent → document upload →
-questions → results → forms) but only the first two steps are implemented; see "Frontend architecture" below.
+`frontend/` (Vite + React) split. The frontend has a step-based intake flow (consent → document upload →
+questions → results → forms) but only the first two steps are implemented; the backend also exposes a SNAP
+eligibility screening route (`/api/eligibility`) that the frontend doesn't call yet. See below.
 
 ## Commands
 
@@ -26,9 +27,9 @@ Copy `backend/.env.example` to `backend/.env` and set `GEMINI_API_KEY` (get one 
 https://aistudio.google.com/apikey) before running — `app/main.py` calls `load_dotenv()` before importing
 anything that constructs a Gemini client.
 
-There is no backend test suite or lint config yet. To sanity-check changes, use `TestClient` from
-`fastapi.testclient` against `app.main.app` (see prior session transcripts for the pattern used to verify
-`/api/extract`'s 400/413/502 paths without a live API key).
+Tests (eligibility only; 51 tests, no live API key needed): `python -m pytest tests` from `backend/`. There is no lint
+config. `/api/extract` has no tests; to sanity-check it use `TestClient` from `fastapi.testclient` against
+`app.main.app`. `scripts/check_extraction_coverage.py` + `scripts/sample_docs/` are for checking extraction coverage.
 
 ### Frontend (`frontend/`)
 
@@ -44,7 +45,7 @@ npm run preview
 
 ### Backend request flow
 
-`app/main.py` loads `.env`, builds the FastAPI app, and mounts routers under `/api` (e.g. `POST /api/extract`).
+`app/main.py` loads `.env`, builds the FastAPI app, and mounts routers under `/api` (`POST /api/extract`, `POST /api/eligibility`).
 **Import order matters**: `load_dotenv()` must run before `app.routes.extract` is imported, because
 `app.services.gemini` reads `GEMINI_API_KEY` when its client is constructed.
 
@@ -76,9 +77,26 @@ app/services/analytics.py (telemetry)              BridgePathExtractionPayload (
   since no uploaded document could ever supply them and adding them would only inflate the prompt/schema with
   guaranteed-null fields.
 - **`app/services/analytics.py`** — `log_anonymous_event(document_type, is_flagged)` is the *only* logging path
-  for extraction events. This is a hard zero-PII boundary: never log or print field values, SSNs, addresses,
+  for extraction events (`log_eligibility_event(benefit, status)` is the equivalent for eligibility). This is a hard zero-PII boundary: never log or print field values, SSNs, addresses,
   financial amounts, filenames, or raw exception content anywhere in the extraction pipeline — only
   `document_type` and a boolean `is_flagged`.
+- **`app/routes/eligibility.py`** — `POST /api/eligibility`, body `{applicant: {...}}` where **every leaf is
+  `{value, source}`** (`source` = `"document"` | `"user"`; bare scalars are accepted and treated as `"user"`).
+  Parses the body by hand (no Pydantic) so FastAPI's 422 never echoes applicant data. Returns
+  `{results: [{benefit, status, reason, estimatedAmount, missing: [{type, item, memberIndex}]}]}`; `status` is
+  `eligible` | `needs_something` | `not_eligible`. 400 `"No information to check."` for an empty/unparseable body or
+  an applicant with no values; 500 generic on evaluation failure. Telemetry via `log_eligibility_event(benefit, status)`.
+- **`app/services/eligibility_rules.py`** — pure functions, no I/O or logging. `evaluate(values, sources)` currently
+  returns SNAP only: hard disqualifiers (not NY resident, SNAP elsewhere), builds the SNAP unit (immigration status,
+  buys/prepares food together, student exemption, disqualification), then the gross-income tier test. It is a
+  *screening*, not a determination, and does **not** predict benefit amounts (`estimatedAmount` is always `None`;
+  no shelter/deduction math). Income the user typed (source `"user"`) yields a `missing` `document` item
+  (factor names from `document_requirements.py`); unanswered facts yield `missing` `question` items using paths like
+  `household_members[].dob` with a `memberIndex`.
+- **`app/services/snap_standards.py`** — numeric constants (FY2027 poverty-level-based gross limits, tier
+  percentages, eligible immigration statuses). Update each October. Some values are marked UNVERIFIED in comments.
+- **`tests/`** — `test_eligibility.py` (51 tests) and `applicant_fixture.py` (a fictional full applicant plus
+  `wrap()` to produce the `{value, source}` form; also generates `frontend/src/data/applicantFullMock.json`).
 - **`app/services/document_requirements.py`** — static reference data (not wired into any route) transcribed
   from the official LDSS-2921 instructions' documentation-requirements table (PUB-1301, pages 18–19), mapping
   eligibility factors (e.g. "Residence", "Earned Income") to acceptable proof documents and the
@@ -116,27 +134,22 @@ placeholder `<p>`s. `main.jsx` wraps `<App />` in `BridgeProvider`.
 - **`src/screens/ConsentScreen.jsx`** — static consent/disclosure screen (data collected, Gemini used to read
   documents, voice answers processed by Google, nothing is submitted on the user's behalf). Gates the "Continue"
   button on a single checkbox; still has lorem-ipsum placeholder body copy.
-- **`src/screens/intakeUpload.jsx`** — **currently broken, not yet updated for the `applicant` shape above.**
-  It still destructures `fields`/`setFields` from `BridgeContext`, which no longer exist (`undefined`), and its
-  upload handler still runs the old flat null-check merge loop instead of calling `mergeExtraction`; its
-  `handleContinue` still reads `fields[name].value` for the old flat `QuestionBank` keys. This was a deliberate,
-  scoped-down change (ship the data-model shape + merge utility in isolation for review before touching every
-  consumer) — **do not assume this file works** until it's updated to: destructure `applicant`/`setApplicant`;
-  call `setApplicant(prev => mergeExtraction(prev, response.fields, response.documentType))` in the upload
-  handler; and give `handleContinue` at least a temporary stub (e.g. `setQuestionQueue([])`) until
-  `QuestionBank.json` is migrated to the nested shape (see below). Checklist-rejection logic and `setDocuments`
-  status tracking don't read `fields` and are unaffected.
+- **`src/screens/intakeUpload.jsx`** — working. Uses `applicant`/`setApplicant`, calls
+  `setApplicant(prev => mergeExtraction(prev, response.fields, response.documentType))` on upload, rejects
+  unrecognized documents (and, in the "fixing" flow, documents not being re-uploaded), and tracks per-document status in
+  `documents`. `handleContinue` is still a **stub** (`setQuestionQueue([])`) until `QuestionBank.json` is migrated.
+
 - **`src/utils/documentScanner.js`** — `pickFile(usePhoneCamera)` opens a native file input (or camera capture
   on mobile via `input.capture = "environment"`) and client-side validates type (jpg/png/pdf) and size (≤10MB)
   before resolving — a duplicate of the backend's own validation in `extract.py`, done client-side for instant
   feedback.
-- **`src/utils/api.js`** — `extract(file)` is the only backend call. **`USE_MOCK` is currently hardcoded to
-  `true`**, so it returns a canned `{ documentType: "pay_stub", fields: {...}, issues: [] }` after an 800ms
-  delay instead of calling the real API — the real `fetch(BASE_URL + "/extract", ...)` path (`BASE_URL` from
-  `VITE_API_URL`, default `http://localhost:8000`) is written but dead until someone flips `USE_MOCK` to `false`.
-  **Not yet updated**: the mock's `fields` is still the old flat shape (`fullName`, `monthlyIncome`, ...), which
-  doesn't match `mergeExtraction`'s expected nested shape (`household_members[]`, `incomes[]`, ...) — needs
-  updating to realistic nested mock documents before `intakeUpload.jsx` can be tested end-to-end again.
+- **`src/utils/api.js`** — `extract(file)` is the only backend call. `USE_MOCK` is currently `false`, so it calls the
+  real `POST /api/extract` (`BASE_URL` from `VITE_API_URL`, default `http://localhost:8000`; needs `GEMINI_API_KEY`
+  on the backend). The mock branch still returns the **old flat shape** (`fullName`, `monthlyIncome`, ...), which
+  doesn't match `mergeExtraction`'s nested shape — don't enable it without updating it. There is **no
+  `/api/eligibility` client yet**; when adding one, wrap every applicant leaf as `{value, source}` (see
+  `wrap()` in `backend/tests/applicant_fixture.py`).
+
 - **`src/data/QuestionBank.json`** — one entry per frontend field name (`question`, `explanation`, `example`,
   `input` type, and an `askIf` for conditional follow-ups), used to generate the follow-up questionnaire for
   whatever fields the uploaded documents didn't fill. **Still keyed to the old flat field names** — hasn't been
@@ -144,18 +157,15 @@ placeholder `<p>`s. `main.jsx` wraps `<App />` in `BridgeProvider`.
   once per household member/income source). Low priority: only needed once the `questions` screen (still an
   unimplemented placeholder, see below) is actually built.
 
-**Current known gap (actively being worked on, not yet fixed):** `BridgeContext.jsx` and `mergeExtraction.js`
-were updated to the nested, per-household shape described above, but their consumers were not updated in the
-same change (a deliberate scope decision to land the data-model change in isolation for review). Until
-`intakeUpload.jsx` and `api.js`'s mock are updated per the notes above, the upload screen does not function.
-Don't assume the frontend intake flow works end-to-end just because `BridgeContext.jsx` looks correct.
+**Current known gaps:** the `questions`, `results`, and `forms` steps are placeholders; nothing in the frontend calls
+`/api/eligibility`; `QuestionBank.json` still uses old flat field names; `data/applicantFullMock.json` and
+`extractFullMock.json` are fixtures for those future screens. `npm run lint` reports a few warnings (no errors).
 
 ### Unimplemented stubs
 
-`app/routes/eligibility.py`, `app/routes/forms.py`, `app/routes/speak.py`, `app/services/cover_sheet.py`,
-`app/services/elevenlabs.py`, `app/services/eligibility_rules.py`, and `app/services/pdf_filler.py` all exist as
-empty 0-byte files — placeholders for future work (eligibility determination, form-filling, text-to-speech via
-ElevenLabs, cover sheet generation). Don't assume any logic exists in them.
+`app/routes/forms.py`, `app/routes/speak.py`, `app/services/cover_sheet.py`, `app/services/elevenlabs.py`, and
+`app/services/pdf_filler.py` all exist as empty 0-byte files — placeholders for future work (form-filling,
+text-to-speech via ElevenLabs, cover sheet generation). Don't assume any logic exists in them.
 
 ### Directory naming
 

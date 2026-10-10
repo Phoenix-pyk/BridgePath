@@ -1,0 +1,304 @@
+{
+  "applicant": {
+    "primary_address": {
+      "value": "123 Fake St, Queens, NY 11101",
+      "source": "document"
+    },
+    "mailing_address": {
+      "value": null,
+      "source": "document"
+    },
+    "household_members": [
+      {
+        "first_name": {
+          "value": "Jane",
+          "source": "document"
+        },
+        "last_name": {
+          "value": "Testperson",
+          "source": "document"
+        },
+        "dob": {
+          "value": "1990-01-31",
+          "source": "document"
+        },
+        "ssn": {
+          "value": null,
+          "source": "document"
+        },
+        "is_applicant": {
+          "value": true,
+          "source": "document"
+        },
+        "relationship_to_applicant": {
+          "value": "Self",
+          "source": "document"
+        },
+        "is_student": {
+          "value": false,
+          "source": "user"
+        },
+        "citizen_status": {
+          "value": "us_citizen",
+          "source": "user"
+        },
+        "sex": {
+          "value": "F",
+          "source": "document"
+        },
+        "marital_status": {
+          "value": "Single",
+          "source": "document"
+        },
+        "highest_grade_completed": {
+          "value": null,
+          "source": "document"
+        },
+        "is_pregnant": {
+          "value": false,
+          "source": "document"
+        },
+        "pregnancy_due_date": {
+          "value": null,
+          "source": "document"
+        },
+        "has_work_limiting_condition": {
+          "value": false,
+          "source": "document"
+        },
+        "is_veteran": {
+          "value": false,
+          "source": "document"
+        },
+        "other_names": {
+          "value": [],
+          "source": "document"
+        },
+        "buys_and_prepares_with_household": {
+          "value": true,
+          "source": "user"
+        },
+        "meets_student_exemption": {
+          "value": null,
+          "source": "user"
+        },
+        "receives_disability_benefits": {
+          "value": false,
+          "source": "user"
+        },
+        "has_snap_disqualification": {
+          "value": false,
+          "source": "user"
+        }
+      },
+      {
+        "first_name": {
+          "value": "Leo",
+          "source": "document"
+        },
+        "last_name": {
+          "value": "Testperson",
+          "source": "document"
+        },
+        "dob": {
+          "value": "2018-05-02",
+          "source": "document"
+        },
+        "ssn": {
+          "value": null,
+          "source": "document"
+        },
+        "is_applicant": {
+          "value": false,
+          "source": "document"
+        },
+        "relationship_to_applicant": {
+          "value": "Child",
+          "source": "document"
+        },
+        "is_student": {
+          "value": false,
+          "source": "user"
+        },
+        "citizen_status": {
+          "value": "us_citizen",
+          "source": "user"
+        },
+        "sex": {
+          "value": "M",
+          "source": "document"
+        },
+        "marital_status": {
+          "value": null,
+          "source": "document"
+        },
+        "highest_grade_completed": {
+          "value": null,
+          "source": "document"
+        },
+        "is_pregnant": {
+          "value": null,
+          "source": "document"
+        },
+        "pregnancy_due_date": {
+          "value": null,
+          "source": "document"
+        },
+        "has_work_limiting_condition": {
+          "value": null,
+          "source": "document"
+        },
+        "is_veteran": {
+          "value": null,
+          "source": "document"
+        },
+        "other_names": {
+          "value": [],
+          "source": "document"
+        },
+        "buys_and_prepares_with_household": {
+          "value": true,
+          "source": "user"
+        },
+        "meets_student_exemption": {
+          "value": null,
+          "source": "user"
+        },
+        "receives_disability_benefits": {
+          "value": false,
+          "source": "user"
+        },
+        "has_snap_disqualification": {
+          "value": false,
+          "source": "user"
+        }
+      }
+    ],
+    "incomes": [
+      {
+        "individual_name": {
+          "value": "Jane Testperson",
+          "source": "document"
+        },
+        "employer_or_source_name": {
+          "value": "ACME CAFE LLC",
+          "source": "document"
+        },
+        "income_type": {
+          "value": "wages",
+          "source": "document"
+        },
+        "gross_amount": {
+          "value": 1300.0,
+          "source": "document"
+        },
+        "frequency": {
+          "value": "biweekly",
+          "source": "document"
+        },
+        "hours_worked_per_month": {
+          "value": 86.8,
+          "source": "document"
+        },
+        "pay_day_of_week": {
+          "value": "Friday",
+          "source": "document"
+        },
+        "employment_type": {
+          "value": "employed",
+          "source": "document"
+        }
+      }
+    ],
+    "shelter": {
+      "rent_or_mortgage_amount": {
+        "value": 1800.0,
+        "source": "document"
+      },
+      "frequency": {
+        "value": "monthly",
+        "source": "document"
+      },
+      "landlord_name": {
+        "value": "Fake Realty LLC",
+        "source": "document"
+      },
+      "landlord_phone": {
+        "value": null,
+        "source": "document"
+      },
+      "utilities": [
+        {
+          "utility_type": {
+            "value": "electric_lighting",
+            "source": "document"
+          },
+          "is_included_in_rent": {
+            "value": false,
+            "source": "document"
+          },
+          "monthly_cost": {
+            "value": 100.0,
+            "source": "document"
+          }
+        }
+      ],
+      "property_taxes_annual": {
+        "value": null,
+        "source": "document"
+      },
+      "homeowners_insurance_annual": {
+        "value": null,
+        "source": "document"
+      },
+      "lease_start_date": {
+        "value": "2025-09-01",
+        "source": "document"
+      }
+    },
+    "assets": [
+      {
+        "resource_type": {
+          "value": "checking",
+          "source": "document"
+        },
+        "amount": {
+          "value": 450.0,
+          "source": "document"
+        },
+        "vehicle_year": {
+          "value": null,
+          "source": "document"
+        },
+        "vehicle_make_model": {
+          "value": null,
+          "source": "document"
+        }
+      }
+    ],
+    "household": {
+      "lives_in_new_york": {
+        "value": true,
+        "source": "user"
+      },
+      "receives_snap_elsewhere": {
+        "value": false,
+        "source": "user"
+      },
+      "has_income": {
+        "value": true,
+        "source": "user"
+      },
+      "dependent_care_monthly": {
+        "value": 200.0,
+        "source": "user"
+      }
+    },
+    "extra": {
+      "phone": {
+        "value": "718-555-0100",
+        "source": "user"
+      }
+    }
+  }
+}

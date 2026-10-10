@@ -1,0 +1,68 @@
+{
+  "documentType": "string",
+  "fields": {
+    "primary_address": "string",
+    "mailing_address": "string",
+    "household_members": [
+      {
+        "first_name": "string",
+        "last_name": "string",
+        "dob": "1990-01-31",
+        "ssn": "string",
+        "is_applicant": true,
+        "relationship_to_applicant": "string",
+        "is_student": true,
+        "citizen_status": "string",
+        "sex": "string",
+        "marital_status": "string",
+        "highest_grade_completed": "string",
+        "is_pregnant": true,
+        "pregnancy_due_date": "string",
+        "has_work_limiting_condition": true,
+        "is_veteran": true,
+        "other_names": [
+          "string"
+        ]
+      }
+    ],
+    "incomes": [
+      {
+        "individual_name": "string",
+        "employer_or_source_name": "string",
+        "income_type": "wages",
+        "gross_amount": 0.0,
+        "frequency": "weekly",
+        "hours_worked_per_month": 0.0,
+        "pay_day_of_week": "string",
+        "employment_type": "string"
+      }
+    ],
+    "shelter": {
+      "rent_or_mortgage_amount": 0.0,
+      "frequency": "weekly",
+      "landlord_name": "string",
+      "landlord_phone": "string",
+      "utilities": [
+        {
+          "utility_type": "heating_primary",
+          "is_included_in_rent": true,
+          "monthly_cost": 0.0
+        }
+      ],
+      "property_taxes_annual": 0.0,
+      "homeowners_insurance_annual": 0.0,
+      "lease_start_date": "string"
+    },
+    "assets": [
+      {
+        "resource_type": "checking",
+        "amount": 0.0,
+        "vehicle_year": "string",
+        "vehicle_make_model": "string"
+      }
+    ]
+  },
+  "issues": [
+    "string"
+  ]
+}
