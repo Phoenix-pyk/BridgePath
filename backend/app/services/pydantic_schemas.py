@@ -48,6 +48,40 @@ class ResourceType(str, Enum):
     OTHER = "other"
 
 
+class DocumentType(str, Enum):
+    # Identity
+    ID = "id"
+    BIRTH_CERTIFICATE = "birth_certificate"
+    SOCIAL_SECURITY_CARD = "social_security_card"
+    IMMIGRATION_DOCUMENT = "immigration_document"
+    # Income
+    PAY_STUB = "pay_stub"
+    EMPLOYER_LETTER = "employer_letter"
+    SOCIAL_SECURITY_AWARD_LETTER = "social_security_award_letter"
+    UNEMPLOYMENT_LETTER = "unemployment_letter"
+    VETERANS_BENEFITS_LETTER = "veterans_benefits_letter"
+    WORKERS_COMP_LETTER = "workers_comp_letter"
+    PENSION_LETTER = "pension_letter"
+    CHILD_SUPPORT_RECORD = "child_support_record"
+    AID_LETTER = "aid_letter"
+    TAX_RETURN = "tax_return"
+    # Housing
+    LEASE = "lease"
+    MORTGAGE_STATEMENT = "mortgage_statement"
+    UTILITY_BILL = "utility_bill"
+    PROPERTY_TAX_BILL = "property_tax_bill"
+    HOMEOWNERS_INSURANCE = "homeowners_insurance"
+    # Resources
+    BANK_STATEMENT = "bank_statement"
+    INVESTMENT_STATEMENT = "investment_statement"
+    LIFE_INSURANCE_POLICY = "life_insurance_policy"
+    VEHICLE_DOCUMENT = "vehicle_document"
+    # Other
+    MEDICAL_STATEMENT = "medical_statement"
+    SCHOOL_RECORD = "school_record"
+    OTHER = "other"
+
+
 class Individual(BaseModel):
     first_name: Optional[str] = Field(None, description="First name")
     last_name: Optional[str] = Field(None, description="Last name")
@@ -115,9 +149,9 @@ class Resource(BaseModel):
 
 
 class BridgePathExtractionPayload(BaseModel):
-    doc_type_detected: str = Field(
+    doc_type_detected: DocumentType = Field(
         ...,
-        description="Detected document type, e.g., CUNY ID, Paystub, Lease Agreement, Utility Bill, Bank Statement"
+        description="Detected document type. Use 'other' only if the document matches none of the listed types."
     )
     primary_address: Optional[str] = Field(None, description="Full residential address")
     mailing_address: Optional[str] = Field(None)

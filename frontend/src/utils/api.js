@@ -1,5 +1,5 @@
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
-const USE_MOCK = false; //Set to false when backend is ready
+const USE_MOCK = false; //Set to true to use canned mock data instead of the backend
 
 async function request(path, options){
     let response;
@@ -25,7 +25,7 @@ export async function extract(file) {
     }
     const body = new FormData(); //Browser's built-in
     body.append("file", file);
-    const response = await request("/extract",{method: "POST", body});
+    const response = await request("/api/extract",{method: "POST", body});
     return response.json(); 
 }
 
