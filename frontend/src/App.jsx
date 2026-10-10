@@ -5,6 +5,7 @@ import IntakeUpload from "./screens/intakeUpload.jsx";
 import RosterScreen from "./screens/RosterScreen.jsx";
 import QuestionScreen from "./screens/QuestionScreen.jsx";
 import ResultsScreen from "./screens/ResultsScreen.jsx";
+import FormsScreen from "./screens/FormsScreen.jsx";
 
 export default function App() {
   const [step, setStep] = useState("consent");
@@ -50,6 +51,6 @@ export default function App() {
   }
 
   if (step === "forms") {
-    return <p>Forms screen (coming soon)</p>;
+    return <FormsScreen goBack={() => setStep("results")} onDeleted={() => setStep("consent")} />;
   }
 }

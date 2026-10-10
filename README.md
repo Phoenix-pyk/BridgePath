@@ -21,7 +21,7 @@ The more documents someone uploads, the fewer questions they're asked.
 | Household roster screen | ✅ Working |
 | Questions screen | ✅ Working (every LDSS-4826 question, paged, unstyled) |
 | Results screen | ✅ Working, including "Answer" / "Upload" buttons to fix what's missing |
-| Form filling / PDF generation | ⏳ Not started (placeholder) |
+| Forms screen + `POST /api/forms`: fills the official LDSS-4826 PDF | ✅ Working (download, then delete your information) |
 | Styling | ⏳ Screens are plain, unstyled HTML |
 | Text-to-speech (ElevenLabs) | ⏳ Not started |
 
@@ -80,7 +80,7 @@ There are three test suites, one per tool:
 | --- | --- | --- | --- |
 | Backend tests | **pytest** | `backend/tests/test_eligibility.py`, `test_forms.py` | SNAP eligibility rules and the `/api/eligibility` route; LDSS-4826 PDF filling and the `/api/forms` route |
 | Frontend unit tests | **Vitest** | `frontend/tests/unit/*.test.js` | `questionBank` (QuestionBank.json checked against the data model), `questionnaire` (a full household run), `paging`, `mergeExtraction` (uploads), `derived` (automatic answers), `fixing` (Answer / Upload buttons), `api` (what's sent to the backend) |
-| Frontend browser tests | **Playwright** | `frontend/tests/e2e/results.spec.js` (helpers in `flow.js`) | 8 results-screen scenarios clicked through in Chrome, with screenshots |
+| Frontend browser tests | **Playwright** | `frontend/tests/e2e/results.spec.js`, `forms.spec.js` (helpers in `flow.js`) | 8 results-screen scenarios + 2 forms scenarios (download the filled PDF, delete my information) clicked through in Chrome, with screenshots |
 
 **Backend** (eligibility + forms, no API key needed), from `backend/`:
 
@@ -134,7 +134,7 @@ proof gives "We need a little more information" with buttons to fix each item.
 ## How it works
 
 ```
-Consent → Upload → Roster → Questions → Results ──→ Forms (not built)
+Consent → Upload → Roster → Questions → Results ──→ Forms (download LDSS-4826)
              │                    │         │  ▲
              ▼                    │         │  └── fix: Answer a question / Upload a document, then re-check
        /api/extract               │         ▼
@@ -168,8 +168,10 @@ Every piece of applicant data lives in one object, `applicant`, in BridgeContext
   which eligibility factor, from the official LDSS-2921 instructions.
 - **[templates/](backend/app/templates/)**: official instruction PDFs and blank fillable forms.
 
-`routes/forms.py`, `routes/speak.py`, `services/cover_sheet.py`, `services/elevenlabs.py` and
-`services/pdf_filler.py` are still empty placeholders.
+- **[routes/forms.py](backend/app/routes/forms.py)** and **[services/pdf_filler.py](backend/app/services/pdf_filler.py)**:
+  `POST /api/forms` takes `{ applicant, benefits }` and returns the filled official PDF(s) as base64, in memory only.
+
+`routes/speak.py`, `services/cover_sheet.py` and `services/elevenlabs.py` are still empty placeholders.
 
 ### Frontend
 
@@ -213,7 +215,6 @@ See [Running the tests](#running-the-tests).
 
 ## Next up
 
-- **Forms:** fill the LDSS-4826 PDF from `applicant` (`pdf_filler.py`) and a forms screen to download it
 - **Styling:** status cards on the results screen, then a consistent look across all screens
 - **Open cross-team issue:** refugees and asylees are currently screened as ineligible (see CLAUDE.md)
 - **After the MVP:** see "Post-MVP improvement ideas" in CLAUDE.md (early "not eligible", saving skipped questions,

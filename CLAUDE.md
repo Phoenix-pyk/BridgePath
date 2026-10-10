@@ -140,7 +140,7 @@ app/services/analytics.py (telemetry)              BridgePathExtractionPayload (
 
 `frontend/src/App.jsx` is a tiny step machine (`useState("consent")`) that renders one screen per step:
 `consent` → `ConsentScreen`, `upload` → `IntakeUpload`, `roster` → `RosterScreen`, `questions` → `QuestionScreen`,
-`results` → `ResultsScreen`, then `forms` is still an unimplemented placeholder `<p>`. `main.jsx` wraps `<App />` in `BridgeProvider`.
+`results` → `ResultsScreen`, `forms` → `FormsScreen` (the whole flow is implemented; screens are unstyled). `main.jsx` wraps `<App />` in `BridgeProvider`.
 
 **Fixing loop:** ResultsScreen's "Answer"/"Upload" buttons call `onFix(fix)`; App's `startFixing` stores it in
 context `fixing` and switches to `questions` (`fix.type === "question"`) or `upload` (`"document"`). Those screens'
@@ -210,6 +210,13 @@ memberId?, proof?, replace?, reason?}`.
   `fixPlan.planFix` and shown as readable text with an **Answer** button (question pages that fill it) and/or an
   **Upload …** button (document types that can supply it); "Answer all of these" combines every answerable item.
   "Go through all the questions" returns to the full question screen.
+- **`src/screens/FormsScreen.jsx`** — last step. Shows each benefit's status from context `results` (no re-check),
+  "Create my application" → `api.createForms(applicant, benefits)` (benefits from `results`, default `["SNAP"]`; the
+  form is offered even after `not_eligible` — right to apply), turns each returned base64 PDF into a Blob URL
+  download link (`LDSS-4826.pdf`, revoked on unmount), stores form names in context `forms`, lists next steps (sign
+  page 8, submit online/mail/in person, phone interview; nothing is submitted for them). "Delete my information and
+  start over" calls `reset()` and returns to consent — this is the consent screen's deletion promise (data otherwise
+  lives only in tab memory).
 - **`src/utils/fixPlan.js`** — `planFix(applicant, missingItem)` → `{text, answer, upload}` (`answer`/`upload` are
   `fixing` values or `null`): questions map via `findQuestionForPath` (+ the member from `memberIndex`; for income/
   asset fields, every row of that person still missing the field); uploads via `data/fixSources.js`. Document
@@ -242,6 +249,8 @@ memberId?, proof?, replace?, reason?}`.
   throws an `Error` whose message is the backend's `detail` when present (those details are generic and PII-free
   by design), otherwise `"Server error: <status>"`, or `"Can't reach server"`.
   - `extract(file)` → `POST /api/extract` → `{documentType, fields, issues}`.
+  - `createForms(applicant, benefits)` → `POST /api/forms` → `{forms: [{name, pdf (base64)}]}`. Sends the **full**
+    applicant (SSN, phones, addresses go on the form), unlike `checkEligibility`.
   - `checkEligibility(applicant)` → `POST /api/eligibility` → `{results: [...]}`. Sends `{ applicant }` minus
     identifiers eligibility doesn't need (`forEligibility`: SSN, phones, addresses, landlord/heat account, free-text
     details, voluntary demographics). Names are kept because eligibility matches income to people by name. Called by
@@ -280,20 +289,12 @@ memberId?, proof?, replace?, reason?}`.
   - The queue asks a question when its target field's `value === null` and `askIf` passes (unknown age counts as
     passing). `member.has_snap_disqualification` has no question — `syncDerived` sets it from the `legal.*` answers.
 
-**Current known gaps:** the `forms` step is a placeholder; a missing `household_members` (empty roster) has no fix
+**Current known gaps:** a missing `household_members` (empty roster) has no fix
 button; "Skip for now" answers are only
 remembered for the current visit to the question screen; `data/applicantFullMock.json` and
 `extractFullMock.json` are fixtures for those future screens. `npm run lint` reports a few warnings (no errors).
 
 ### Open cross-team issues
-
-**Forms not wired into the frontend yet (open).** `pdf_filler.py` fills LDSS-4826 correctly from the questionnaire's
-output (checked by filling it from a questionnaire-produced household; "disabled or 60+" gets a "No" once everyone's
-answer and DOB are known, and rows from the cash question typed `"other"` count as cash on hand via
-`_added_by == "hasCashOrAccounts"`), but:
-- Frontend still has no `/api/forms` client or forms screen. When adding `createForms` to `api.js`, send the **full**
-  applicant (SSN, phones, addresses go on the form), not `forEligibility`'s stripped copy.
-
 **Eligible non-citizens are screened out (eligibility side, open).** Refugees, asylees and the other qualified
 non-citizens listed on page 10 of `app/templates/4826A_ins.pdf` (7 CFR 273.4) can get SNAP, but
 `snap_standards.ELIGIBLE_CITIZEN_STATUSES` only contains `us_citizen`, `lawful_permanent_resident`,

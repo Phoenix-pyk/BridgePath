@@ -5,7 +5,7 @@ const consentPoints = [
     "What we collect:       the documents you upload and your answers.",
     "Why:                   to estimate your eligibility and fill out your application forms.",
     "Who else sees it:      your documents are sent to Google's Gemini AI to be read.",
-    "How long we keep it:   everything is deleted when you download your forms or close the page.",
+    "How long we keep it:   nothing is saved. Everything is deleted when you tap \"Delete my information\" or close the page.",
     "What this app isn't:   not a government agency. Results are estimates, and the app doesn't submit anything for you.",
     "Voice answers:         if you answer by voice, your speech is processed by Google to convert it to text.",
 ];
