@@ -1,131 +1,944 @@
 {
-    "fullName":{
-        "question": "What is your full legal name",
-        "explanation": "Use the name that appears on your ID or Social Security card",
-        "example": "Maria Elena Lopez",
-        "input": "text",
+    "applicationType": {
+        "section": "basics", "scope": "household", "path": "application.type",
+        "question": "Are you applying for SNAP for the first time, or renewing?",
+        "explanation": "Renewing (recertifying) means you already get SNAP and your certification period is ending",
+        "example": "If you have never had SNAP, or your SNAP stopped, choose applying",
+        "input": "select",
+        "options": [{ "value": "apply", "label": "Applying" }, { "value": "recertify", "label": "Renewing" }],
+        "askIf": null
+    },
+    "noticeLanguage": {
+        "section": "basics", "scope": "household", "path": "application.notice_language",
+        "question": "What language do you want your letters from SNAP in?",
+        "explanation": "SNAP will mail you letters about your case",
+        "example": "",
+        "input": "select",
+        "options": [{ "value": "english", "label": "English only" }, { "value": "spanish_english", "label": "Spanish and English" }],
+        "askIf": null
+    },
+    "altFormat": {
+        "section": "basics", "scope": "household", "path": "application.alt_format",
+        "question": "Are you blind or seriously visually impaired and want your letters in another format?",
+        "explanation": "Braille is available if none of the other formats work for you",
+        "example": "",
+        "input": "select",
+        "options": [
+            { "value": "none", "label": "No, regular print is fine" },
+            { "value": "large_print", "label": "Large print" },
+            { "value": "data_cd", "label": "Data CD" },
+            { "value": "audio_cd", "label": "Audio CD" },
+            { "value": "braille", "label": "Braille" }
+        ],
+        "askIf": null
+    },
+    "phone": {
+        "section": "basics", "scope": "household", "path": "extra.phone",
+        "question": "What is your phone number?",
+        "explanation": "SNAP interviews are usually done by phone",
+        "example": "718 555 0100",
+        "input": "phone",
+        "askIf": null
+    },
+    "otherPhone": {
+        "section": "basics", "scope": "household", "path": "extra.other_phone",
+        "question": "Is there another phone number where you can be reached?",
+        "explanation": "",
+        "example": "A work phone or a family member's phone",
+        "input": "phone",
+        "skipValue": "", "skipLabel": "No other number",
+        "askIf": null
+    },
+    "primaryAddress": {
+        "section": "basics", "scope": "household", "path": "primary_address",
+        "question": "What is your home address?",
+        "explanation": "Use the address where you live now, even if it is temporary",
+        "example": "123 Main St, Apt 4, Queens, NY 11101",
+        "input": "address",
+        "skipValue": "", "skipLabel": "I don't have a permanent address",
+        "askIf": null
+    },
+    "mailingAddress": {
+        "section": "basics", "scope": "household", "path": "mailing_address",
+        "question": "Where should SNAP mail your letters?",
+        "explanation": "Only fill this in if it is different from your home address",
+        "example": "A P.O. box or a friend's address",
+        "input": "address",
+        "skipValue": "", "skipLabel": "Same as my home address",
         "askIf": null
     },
 
-    "dateOfBirth":{
-        "question": "What is your date of birth",
-        "explanation": " ",
+    "firstName": {
+        "section": "roster", "scope": "member", "path": "first_name",
+        "question": "What is {name}'s first name?",
+        "explanation": "Use the legal name on their ID or Social Security card",
+        "example": "Maria",
+        "input": "text",
+        "askIf": null
+    },
+    "middleInitial": {
+        "section": "roster", "scope": "member", "path": "middle_initial",
+        "question": "What is {name}'s middle initial?",
+        "explanation": "",
+        "example": "E",
+        "input": "text",
+        "skipValue": "", "skipLabel": "No middle name",
+        "askIf": null
+    },
+    "lastName": {
+        "section": "roster", "scope": "member", "path": "last_name",
+        "question": "What is {name}'s last name?",
+        "explanation": "Use the legal name on their ID or Social Security card",
+        "example": "Lopez",
+        "input": "text",
+        "askIf": null
+    },
+    "relationship": {
+        "section": "roster", "scope": "member", "path": "relationship_to_applicant",
+        "question": "How is {name} related to you?",
+        "explanation": "List everyone who lives with you, even if they are not applying",
+        "example": "Son, wife, friend, roommate",
+        "input": "select",
+        "options": [
+            { "value": "Spouse", "label": "Spouse" },
+            { "value": "Child", "label": "Child" },
+            { "value": "Parent", "label": "Parent" },
+            { "value": "Sibling", "label": "Brother or sister" },
+            { "value": "Other relative", "label": "Other relative" },
+            { "value": "Partner", "label": "Partner" },
+            { "value": "Friend", "label": "Friend or roommate" },
+            { "value": "Other", "label": "Other" }
+        ],
+        "askIf": { "field": "member.is_applicant", "equals": false }
+    },
+    "buysAndPrepares": {
+        "section": "roster", "scope": "member", "path": "buys_and_prepares_with_household",
+        "question": "Do you buy and make food together with {name}?",
+        "explanation": "People who buy and cook food together count as one SNAP household. Spouses and children under 22 who live with their parents always count together",
+        "example": "If you share groceries and meals with your roommate, answer yes. If you each buy your own food, answer no",
+        "input": "yesno",
+        "askIf": { "field": "member.is_applicant", "equals": false }
+    },
+    "isApplying": {
+        "section": "roster", "scope": "member", "path": "is_applying",
+        "question": "Is {name} applying for SNAP?",
+        "explanation": "You can apply for some people in your household and not others. For example, parents who can't get SNAP because of immigration status can still apply for their children",
+        "example": "",
+        "input": "yesno",
+        "askIf": null
+    },
+
+    "dob": {
+        "section": "person", "scope": "member", "path": "dob",
+        "question": "What is {name}'s date of birth?",
+        "explanation": "",
         "example": "03/14/2004",
         "input": "date",
         "askIf": null
     },
-
-    "address":{
-        "question": "What is your home address",
-        "explanation": "Use the address where you currently live, even if it is temporary",
-        "example": "123 Main St, Apt 4, Salt Lake City, UT 84101",
-        "input": "text",
-        "askIf": null
-    },
-
-    "phone":{
-        "question": "What is your phone number",
-        "explanation": " ",
-        "example": "801 456 8756",
-        "input": "number",
-        "askIf": null
-    },
-
-    "householdSize":{
-        "question": "How many people live in your household",
-        "explanation": "Count people who buy and cook together as one household",
-        "example": "If you live with 2 roommates but buy your own food, answer 1",
-        "input": "number",
-        "askIf": null
-    },
-
-    "monthlyIncome":{
-        "question": "How much money do you earn each month before taxes",
-        "explanation": "Include wages, tips, and any other income. Use the amount before taxes are taken out",
-        "example": "If you earn $15 an hour and work 80 hours a month, answer 1200",
-        "input": "number",
-        "askIf": null
-    },
-
-    "employer":{
-        "question": "Who is your employer",
-        "explanation": "Enter the name of the business or person you work for. If you have more than one job, list your main one",
-        "example": "Target",
-        "input": "text",
-        "askIf": null
-    },
-
-    "payFrequency":{
-        "question": "How often do you get paid",
-        "explanation": "Choose how often you receive a paycheck from your main job",
-        "example": "If you get paid every other Friday, choose biweekly",
+    "sex": {
+        "section": "person", "scope": "member", "path": "sex",
+        "question": "What is {name}'s sex?",
+        "explanation": "Choose what is on their ID if you are not sure",
+        "example": "",
         "input": "select",
-        "options": ["weekly", "biweekly", "twice a month", "monthly"],
+        "options": [{ "value": "F", "label": "Female" }, { "value": "M", "label": "Male" }, { "value": "X", "label": "X" }],
         "askIf": null
     },
-
-    "workHours":{
-        "question": "How many hours do you work each week",
-        "explanation": "Use your average if your hours change from week to week",
-        "example": "If you work 15 hours one week and 25 the next, answer 20",
+    "maritalStatus": {
+        "section": "person", "scope": "member", "path": "marital_status",
+        "question": "What is {name}'s marital status?",
+        "explanation": "",
+        "example": "",
+        "input": "select",
+        "options": [
+            { "value": "Single", "label": "Single (never married)" },
+            { "value": "Married", "label": "Married" },
+            { "value": "Separated", "label": "Separated" },
+            { "value": "Divorced", "label": "Divorced" },
+            { "value": "Widowed", "label": "Widowed" }
+        ],
+        "askIf": null
+    },
+    "ssn": {
+        "section": "person", "scope": "member", "path": "ssn",
+        "question": "What is {name}'s Social Security number?",
+        "explanation": "Everyone applying for SNAP needs one. If they don't have one, they can still apply and will be asked to apply for a number",
+        "example": "123 45 6789",
+        "input": "ssn",
+        "skipValue": "NONE", "skipLabel": "They don't have one",
+        "askIf": { "field": "member.is_applying", "equals": true }
+    },
+    "otherNames": {
+        "section": "person", "scope": "member", "path": "other_names",
+        "question": "Has {name} ever used any other names?",
+        "explanation": "Include maiden names or names from a previous marriage",
+        "example": "Maria Gomez",
+        "input": "list",
+        "skipValue": [], "skipLabel": "No other names",
+        "askIf": null
+    },
+    "citizenStatus": {
+        "section": "person", "scope": "member", "path": "citizen_status",
+        "question": "Is {name} a U.S. citizen?",
+        "explanation": "Many non-citizens can get SNAP too. Your answer does not affect anyone's immigration case",
+        "example": "",
+        "input": "select",
+        "options": [
+            { "value": "us_citizen", "label": "Yes, U.S. citizen or U.S. national" },
+            { "value": "lawful_permanent_resident", "label": "No, green card holder (permanent resident)" },
+            { "value": "cuban_haitian_entrant", "label": "No, Cuban or Haitian entrant" },
+            { "value": "cofa_citizen", "label": "No, citizen of Micronesia, the Marshall Islands or Palau" },
+            { "value": "other_noncitizen", "label": "No, another immigration status" }
+        ],
+        "askIf": null
+    },
+    "isVeteran": {
+        "section": "person", "scope": "member", "path": "is_veteran",
+        "question": "Is {name} a veteran?",
+        "explanation": "Served in the U.S. military",
+        "example": "",
+        "input": "yesno",
+        "askIf": { "age": { "min": 17 } }
+    },
+    "isHispanic": {
+        "section": "person", "scope": "member", "path": "is_hispanic",
+        "question": "Is {name} Hispanic or Latino?",
+        "explanation": "This is optional and does not affect eligibility or benefits",
+        "example": "",
+        "input": "yesno",
+        "skipValue": "declined", "skipLabel": "Prefer not to say",
+        "askIf": { "field": "member.is_applying", "equals": true }
+    },
+    "race": {
+        "section": "person", "scope": "member", "path": "race",
+        "question": "What is {name}'s race? Choose all that apply",
+        "explanation": "This is optional and does not affect eligibility or benefits",
+        "example": "",
+        "input": "multiselect",
+        "options": [
+            { "value": "I", "label": "Native American or Alaskan Native" },
+            { "value": "A", "label": "Asian" },
+            { "value": "B", "label": "Black or African American" },
+            { "value": "P", "label": "Native Hawaiian or Pacific Islander" },
+            { "value": "W", "label": "White" }
+        ],
+        "skipValue": "declined", "skipLabel": "Prefer not to say",
+        "askIf": { "field": "member.is_applying", "equals": true }
+    },
+    "educationLevel": {
+        "questionSelf": "What is the highest level of school you have finished?",
+        "section": "person", "scope": "member", "path": "education_level",
+        "question": "What is the highest level of school {name} has finished?",
+        "explanation": "This is optional and does not affect eligibility or benefits",
+        "example": "",
+        "input": "select",
+        "options": [
+            { "value": "0", "label": "Less than high school diploma or equivalency" },
+            { "value": "1", "label": "High school diploma or equivalency (GED/TASC)" },
+            { "value": "2", "label": "Associate degree (2-year college)" },
+            { "value": "3", "label": "Bachelor's degree (4-year college)" },
+            { "value": "4", "label": "Graduate degree (Master's or higher)" },
+            { "value": "5", "label": "Finished an Individualized Education Plan (IEP)" },
+            { "value": "8", "label": "I don't know" }
+        ],
+        "skipValue": "declined", "skipLabel": "Prefer not to say",
+        "askIf": { "all": [{ "field": "member.is_applying", "equals": true }, { "age": { "min": 16 } }] }
+    },
+    "highestGrade": {
+        "questionSelf": "What is the highest grade you have completed?",
+        "section": "person", "scope": "member", "path": "highest_grade_completed",
+        "question": "What is the highest grade {name} has completed?",
+        "explanation": "If they are in high school now, use the last grade they finished",
+        "example": "If they are in 10th grade, answer 9",
         "input": "number",
+        "askIf": { "field": "member.education_level", "equals": "0" }
+    },
+    "primaryLanguage": {
+        "questionSelf": "What language do you speak most often?",
+        "section": "person", "scope": "member", "path": "primary_language",
+        "question": "What language does {name} speak most often?",
+        "explanation": "This is optional and does not affect eligibility or benefits",
+        "example": "English, Spanish, Bengali",
+        "input": "text",
+        "skipValue": "declined", "skipLabel": "Prefer not to say",
+        "askIf": { "age": { "min": 16 } }
+    },
+    "disabilityBenefits": {
+        "section": "person", "scope": "member", "path": "receives_disability_benefits",
+        "question": "Does {name} get disability benefits?",
+        "explanation": "For example SSI, Social Security Disability (SSDI), veterans disability, or New York State disability",
+        "example": "",
+        "input": "yesno",
+        "askIf": null
+    },
+    "hasMedicalBills": {
+        "section": "person", "scope": "member", "path": "has_medical_bills",
+        "question": "Does {name} have medical bills?",
+        "explanation": "These can lower how much income SNAP counts for people who are 60 or older or have a disability",
+        "example": "Doctor or dental visits, prescriptions, health insurance, eyeglasses, hearing aids, rides to medical appointments",
+        "input": "yesno",
+        "askIf": { "any": [{ "age": { "min": 60 } }, { "field": "member.receives_disability_benefits", "equals": true }] }
+    },
+    "medicalBillsDetails": {
+        "section": "person", "scope": "member", "path": "medical_bills_details",
+        "question": "What are {name}'s medical bills for, how much are they, and who pays them?",
+        "explanation": "",
+        "example": "Prescriptions, $40 a month, paid by me",
+        "input": "longtext",
+        "askIf": { "field": "member.has_medical_bills", "equals": true }
+    },
+    "hasSpenddown": {
+        "section": "person", "scope": "member", "path": "has_medicaid_spenddown",
+        "question": "Is {name} on Medicaid with a spenddown?",
+        "explanation": "A spenddown means you have to pay some medical costs yourself each month before Medicaid pays",
+        "example": "",
+        "input": "yesno",
+        "askIf": null
+    },
+    "spenddownAmount": {
+        "section": "person", "scope": "member", "path": "medicaid_spenddown_amount",
+        "question": "How much is {name}'s monthly spenddown?",
+        "explanation": "",
+        "example": "150",
+        "input": "money",
+        "askIf": { "field": "member.has_medicaid_spenddown", "equals": true }
+    },
+    "inSchoolTeen": {
+        "section": "person", "scope": "member", "path": "in_school_or_training",
+        "question": "Is {name} enrolled in school or a training program?",
+        "explanation": "",
+        "example": "",
+        "input": "yesno",
+        "askIf": { "age": { "min": 16, "max": 17 } }
+    },
+    "isStudent": {
+        "section": "person", "scope": "member", "path": "is_student",
+        "question": "Is {name} enrolled at least half-time in college or a trade school?",
+        "explanation": "This means a college or university, or a business, technical, trade or vocational school that requires a high school diploma or equivalency. Not high school. Half-time is set by the school, usually about 6 credits a semester. Students enrolled less than half-time should answer no",
+        "example": "If they take 9 credits at a community college, answer yes. If they take one 3-credit class, answer no",
+        "input": "yesno",
+        "askIf": { "age": { "min": 18, "max": 49 } }
+    },
+    "schoolName": {
+        "section": "person", "scope": "member", "path": "school_name",
+        "question": "What is the name of {name}'s school or training program?",
+        "explanation": "",
+        "example": "Queens College",
+        "input": "text",
+        "askIf": { "any": [
+            { "all": [{ "field": "member.in_school_or_training", "equals": true }, { "age": { "min": 16, "max": 17 } }] },
+            { "all": [{ "field": "member.is_student", "equals": true }, { "age": { "min": 18, "max": 49 } }] }
+        ] }
+    },
+    "schoolFullTime": {
+        "section": "person", "scope": "member", "path": "school_full_time",
+        "question": "Is {name} a full-time student?",
+        "explanation": "Check with the school if you are not sure",
+        "example": "If they take 12 credits this semester, answer yes",
+        "input": "yesno",
+        "askIf": { "all": [{ "field": "member.is_student", "equals": true }, { "age": { "min": 18, "max": 49 } }] }
+    },
+    "schoolIncome": {
+        "section": "person", "scope": "member", "path": "school_has_income",
+        "question": "Does {name} get any money from school?",
+        "explanation": "Grants, scholarships, loans or work-study",
+        "example": "",
+        "input": "yesno",
+        "askIf": { "all": [{ "field": "member.is_student", "equals": true }, { "age": { "min": 18, "max": 49 } }] }
+    },
+    "schoolExpenses": {
+        "section": "person", "scope": "member", "path": "school_has_expenses",
+        "question": "Does {name} pay school costs?",
+        "explanation": "Tuition, fees, books or supplies",
+        "example": "",
+        "input": "yesno",
+        "askIf": { "all": [{ "field": "member.is_student", "equals": true }, { "age": { "min": 18, "max": 49 } }] }
+    },
+    "studentExemption": {
+        "section": "person", "scope": "member", "path": "meets_student_exemption",
+        "question": "Does any of these describe {name}?",
+        "explanation": "College students can get SNAP if at least one of these is true: has a paid job for at least 20 hours a week (self-employed counts if they earn at least minimum wage for those hours); is approved for a work-study job this school term and expects to work; is in an on-the-job training program; takes care of someone in the household under 6; takes care of someone in the household age 6 to 11 and can't get child care to go to class and work; is a single parent studying full-time who takes care of a child under 12; gets cash assistance (Temporary Assistance); was placed in school by a job training program such as SNAP Employment and Training, WIOA or the Trade Act; or is physically or mentally unable to work",
+        "example": "If they work 22 hours a week at a store, or their financial aid includes a work-study job they'll be working this semester, answer yes",
+        "input": "yesno",
+        "askIf": { "all": [{ "field": "member.is_student", "equals": true }, { "age": { "min": 18, "max": 49 } }] }
+    },
+    "fosterCareAt18": {
+        "questionSelf": "Were you in foster care on your 18th birthday?",
+        "section": "person", "scope": "member", "path": "foster_care_at_18",
+        "question": "Was {name} in foster care on their 18th birthday?",
+        "explanation": "",
+        "example": "",
+        "input": "yesno",
+        "askIf": { "age": { "min": 18 } }
+    },
+    "boarderOrFoster": {
+        "section": "person", "scope": "member", "path": "boarder_or_foster",
+        "question": "Is {name} a boarder, foster child or foster adult?",
+        "explanation": "A boarder pays you for a room and meals",
+        "example": "",
+        "input": "select",
+        "options": [
+            { "value": "none", "label": "No" },
+            { "value": "boarder", "label": "Boarder" },
+            { "value": "foster", "label": "Foster child or foster adult" }
+        ],
+        "askIf": { "field": "member.is_applicant", "equals": false }
+    },
+
+    "anyonePregnant": {
+        "section": "household", "scope": "household", "path": "is_pregnant",
+        "question": "Is anyone in your household age 16 or older pregnant?",
+        "explanation": "Choose everyone who is pregnant, including yourself",
+        "example": "",
+        "input": "whoFlag",
+        "memberAskIf": { "age": { "min": 16 } },
+        "askIf": null
+    },
+    "pregnancyDueDate": {
+        "section": "household", "scope": "member", "path": "pregnancy_due_date",
+        "question": "When is {name}'s baby due?",
+        "explanation": "",
+        "example": "",
+        "input": "date",
+        "skipValue": "", "skipLabel": "I don't know yet",
+        "askIf": { "field": "member.is_pregnant", "equals": true }
+    },
+    "anyoneWorkLimited": {
+        "section": "household", "scope": "household", "path": "has_work_limiting_condition",
+        "question": "Does anyone in your household age 16 or older have a medical condition that limits how much or what kind of work they can do?",
+        "explanation": "This can be physical or mental. Choose everyone it applies to, including yourself",
+        "example": "A back injury that means they can't lift heavy things",
+        "input": "whoFlag",
+        "memberAskIf": { "age": { "min": 16 } },
+        "askIf": null
+    },
+    "livesInNewYork": {
+        "section": "household", "scope": "household", "path": "household.lives_in_new_york",
+        "question": "Do you live in New York State?",
+        "explanation": "You have to live in New York to get New York SNAP",
+        "example": "",
+        "input": "yesno",
+        "askIf": null
+    },
+    "snapElsewhere": {
+        "section": "household", "scope": "household", "path": "household.receives_snap_elsewhere",
+        "question": "Is anyone in your household applying for or getting SNAP or cash assistance somewhere else?",
+        "explanation": "For example, in another state or another county",
+        "example": "",
+        "input": "yesno",
+        "askIf": null
+    },
+    "treatmentOrGroupHome": {
+        "section": "household", "scope": "household", "path": "household.in_treatment_or_group_home",
+        "question": "Does anyone in your household live in a drug or alcohol treatment center or a state-certified group home or supported apartment?",
+        "explanation": "",
+        "example": "",
+        "input": "yesno",
         "askIf": null
     },
 
-    "monthlyRent":{
-        "question": "How much do you pay for rent or mortgage each month",
-        "explanation": "Include only your share if you split housing costs with people outside your household",
-        "example": "If your rent is $1,200 and you split it evenly with one roommate, answer 600",
+    "hasIncome": {
+        "section": "income", "scope": "household", "path": "household.has_income",
+        "question": "Does anyone in your household get any income?",
+        "explanation": "Income includes wages, self-employment, child support, Social Security or SSI, unemployment, pensions, veterans benefits, and money from friends or family",
+        "example": "",
+        "input": "yesno",
+        "addRows": "income",
+        "askIf": { "isEmpty": "incomes" }
+    },
+    "hasMoreIncome": {
+        "section": "income", "scope": "household", "path": "household.has_more_income",
+        "question": "Does anyone in your household get income that isn't on the documents you uploaded?",
+        "explanation": "Income includes wages, self-employment, child support, Social Security or SSI, unemployment, pensions, veterans benefits, and money from friends or family",
+        "example": "If you uploaded your pay stub but your partner also works, answer yes",
+        "input": "yesno",
+        "addRows": "income",
+        "askIf": { "not": { "isEmpty": "incomes" } }
+    },
+    "incomeMember": {
+        "section": "income", "scope": "income", "path": "member_id",
+        "question": "Who gets this income?",
+        "explanation": "",
+        "example": "",
+        "input": "member",
+        "askIf": null
+    },
+    "incomeType": {
+        "section": "income", "scope": "income", "path": "income_type",
+        "question": "What kind of income is this?",
+        "explanation": "",
+        "example": "",
+        "input": "select",
+        "options": [
+            { "value": "wages", "label": "Job (wages)" },
+            { "value": "self_employment", "label": "Self-employment (babysitting, cleaning, driving, crafts...)" },
+            { "value": "social_security", "label": "Social Security" },
+            { "value": "ssi", "label": "SSI" },
+            { "value": "unemployment_insurance", "label": "Unemployment" },
+            { "value": "veterans_benefits", "label": "Veterans benefits" },
+            { "value": "workers_compensation", "label": "Workers' compensation" },
+            { "value": "pension_retirement", "label": "Pension or retirement" },
+            { "value": "child_support_received", "label": "Child support" },
+            { "value": "alimony", "label": "Alimony" },
+            { "value": "educational_assistance", "label": "Grants or scholarships" },
+            { "value": "foster_care_maintenance", "label": "Foster care payments" },
+            { "value": "rental_roomer_boarder", "label": "Rent from a roomer or boarder" },
+            { "value": "other", "label": "Other (including money from friends or family)" }
+        ],
+        "askIf": null
+    },
+    "incomeSource": {
+        "section": "income", "scope": "income", "path": "employer_or_source_name",
+        "question": "Who pays this income?",
+        "explanation": "The employer, agency or person the money comes from",
+        "example": "Target, Social Security Administration",
+        "input": "text",
+        "askIf": null
+    },
+    "incomeAmount": {
+        "section": "income", "scope": "income", "path": "gross_amount",
+        "question": "How much is each payment, before taxes and deductions?",
+        "explanation": "Use the gross amount. For self-employment, use what you earn minus what it costs you to do the work",
+        "example": "If your pay stub says gross pay $650, answer 650",
+        "input": "money",
+        "askIf": null
+    },
+    "incomeFrequency": {
+        "section": "income", "scope": "income", "path": "frequency",
+        "question": "How often is it paid?",
+        "explanation": "",
+        "example": "If you get paid every other Friday, choose every two weeks",
+        "input": "select",
+        "options": [
+            { "value": "weekly", "label": "Every week" },
+            { "value": "biweekly", "label": "Every two weeks" },
+            { "value": "semi_monthly", "label": "Twice a month" },
+            { "value": "monthly", "label": "Once a month" }
+        ],
+        "askIf": null
+    },
+    "incomeHours": {
+        "section": "income", "scope": "income", "path": "hours_worked_per_month",
+        "question": "About how many hours a month is this work?",
+        "explanation": "Use your average if your hours change",
+        "example": "If you work about 20 hours a week, answer 87",
         "input": "number",
+        "askIf": { "field": "row.income_type", "in": ["wages", "self_employment"] }
+    },
+    "incomeChanged": {
+        "section": "income", "scope": "household", "path": "household.income_changed_last_30_days",
+        "question": "In the last 30 days, has anyone in your household changed or quit a job, or had their hours or income cut?",
+        "explanation": "",
+        "example": "",
+        "input": "yesno",
+        "askIf": null
+    },
+    "pendingIncome": {
+        "section": "income", "scope": "household", "path": "household.pending_income",
+        "question": "Is anyone in your household expecting income they haven't received yet?",
+        "explanation": "",
+        "example": "A new job that hasn't paid yet, or an unemployment claim that is still being processed",
+        "input": "yesno",
+        "askIf": null
+    },
+    "pendingIncomeDetails": {
+        "section": "income", "scope": "household", "path": "household.pending_income_details",
+        "question": "Tell us about the income you're expecting",
+        "explanation": "Who it's for, where it's from, and about how much",
+        "example": "My first paycheck from my new job at Target, about $500, on the 15th",
+        "input": "longtext",
+        "askIf": { "field": "household.pending_income", "equals": true }
+    },
+    "onStrike": {
+        "section": "income", "scope": "household", "path": "household.on_strike",
+        "question": "Is anyone in your household on strike?",
+        "explanation": "",
+        "example": "",
+        "input": "who",
+        "askIf": null
+    },
+    "dependentCareMonthly": {
+        "section": "income", "scope": "household", "path": "household.dependent_care_monthly",
+        "question": "How much does your household pay each month for child care or adult dependent care so someone can work, look for work, or go to school or training?",
+        "explanation": "Enter 0 if you don't pay for care. This cost can lower how much income SNAP counts",
+        "example": "If you pay a babysitter $50 a week while you work, answer 217",
+        "input": "money",
+        "askIf": null
+    },
+    "dependentCareWho": {
+        "section": "income", "scope": "household", "path": "household.dependent_care_who",
+        "question": "Who pays for the care?",
+        "explanation": "",
+        "example": "",
+        "input": "members",
+        "askIf": { "field": "household.dependent_care_monthly", "gt": 0 }
+    },
+
+    "hasCashOrAccounts": {
+        "section": "resources", "scope": "household", "path": "household.has_more_cash",
+        "question": "Does anyone in your household have cash or money in a bank account that isn't on a statement you uploaded?",
+        "explanation": "Include cash at home, checking and savings accounts, and accounts shared with someone outside your household. This only affects how fast you can get SNAP",
+        "example": "",
+        "input": "yesno",
+        "addRows": "asset",
+        "rowTypes": ["checking", "savings", "other"],
+        "askIf": null
+    },
+    "hasFinancialAssets": {
+        "section": "resources", "scope": "household", "path": "household.has_financial_assets",
+        "question": "Does anyone in your household have other savings or investments?",
+        "explanation": "",
+        "example": "Stocks, bonds, savings bonds, retirement accounts, IRAs, mutual funds, trust funds, CDs",
+        "input": "yesno",
+        "addRows": "asset",
+        "rowTypes": ["retirement_account", "stocks_bonds", "burial_trust_or_fund", "life_insurance", "other"],
+        "askIf": null
+    },
+    "hasVehicles": {
+        "section": "resources", "scope": "household", "path": "household.has_vehicles",
+        "question": "Does anyone in your household have a car, truck or other vehicle?",
+        "explanation": "",
+        "example": "",
+        "input": "yesno",
+        "addRows": "asset",
+        "rowTypes": ["vehicle"],
+        "askIf": null
+    },
+    "assetMember": {
+        "section": "resources", "scope": "asset", "path": "member_id",
+        "question": "Who does this belong to?",
+        "explanation": "If it's shared, choose the person in your household it belongs to",
+        "example": "",
+        "input": "member",
+        "askIf": null
+    },
+    "assetType": {
+        "section": "resources", "scope": "asset", "path": "resource_type",
+        "question": "What kind is it?",
+        "explanation": "",
+        "example": "",
+        "input": "select",
+        "options": [
+            { "value": "checking", "label": "Checking account" },
+            { "value": "savings", "label": "Savings account" },
+            { "value": "retirement_account", "label": "Retirement account or IRA" },
+            { "value": "stocks_bonds", "label": "Stocks, bonds or mutual funds" },
+            { "value": "life_insurance", "label": "Life insurance" },
+            { "value": "burial_trust_or_fund", "label": "Burial fund or trust" },
+            { "value": "vehicle", "label": "Vehicle" },
+            { "value": "other", "label": "Other (including cash)" }
+        ],
+        "askIf": null
+    },
+    "assetAmount": {
+        "section": "resources", "scope": "asset", "path": "amount",
+        "question": "About how much is it worth?",
+        "explanation": "For a bank account, use the current balance",
+        "example": "450",
+        "input": "money",
+        "askIf": { "not": { "field": "row.resource_type", "equals": "vehicle" } }
+    },
+    "vehicleYear": {
+        "section": "resources", "scope": "asset", "path": "vehicle_year",
+        "question": "What year is the vehicle?",
+        "explanation": "",
+        "example": "2015",
+        "input": "number",
+        "askIf": { "field": "row.resource_type", "equals": "vehicle" }
+    },
+    "vehicleMakeModel": {
+        "section": "resources", "scope": "asset", "path": "vehicle_make_model",
+        "question": "What make and model is the vehicle?",
+        "explanation": "",
+        "example": "Toyota Corolla",
+        "input": "text",
+        "askIf": { "field": "row.resource_type", "equals": "vehicle" }
+    },
+    "ownsProperty": {
+        "section": "resources", "scope": "household", "path": "household.owns_property",
+        "question": "Does anyone applying own any property, including your home?",
+        "explanation": "Buildings, land, rental property, or a vacation home",
+        "example": "",
+        "input": "yesno",
+        "askIf": null
+    },
+    "propertyDetails": {
+        "section": "resources", "scope": "household", "path": "household.property_details",
+        "question": "What property, and who owns it?",
+        "explanation": "",
+        "example": "Our house at 123 Main St, owned by me and my wife",
+        "input": "longtext",
+        "askIf": { "field": "household.owns_property", "equals": true }
+    },
+    "propertyTransferred": {
+        "section": "resources", "scope": "household", "path": "household.property_transferred_last_3_months",
+        "question": "In the last 3 months, has anyone applying sold, given away or transferred cash or property to qualify for SNAP?",
+        "explanation": "",
+        "example": "",
+        "input": "yesno",
         "askIf": null
     },
 
-    "paysUtilities":{
-        "question": "Do you pay for utilities separately from your rent",
-        "explanation": "Utilities include heating, cooling, electricity, gas, water, and phone",
+    "livingSituation": {
+        "section": "housing", "scope": "household", "path": "shelter.living_situation",
+        "question": "Which of these describe where you live? Choose all that apply",
+        "explanation": "",
+        "example": "",
+        "input": "multiselect",
+        "options": [
+            { "value": "rent", "label": "I rent" },
+            { "value": "own", "label": "I own my home or am paying a mortgage" },
+            { "value": "with_relatives", "label": "I live with relatives or friends" },
+            { "value": "no_permanent", "label": "I don't have a permanent place to live" },
+            { "value": "farmworker", "label": "I'm a migrant or seasonal farmworker" }
+        ],
+        "askIf": null
+    },
+    "rentOrMortgage": {
+        "section": "housing", "scope": "household", "path": "shelter.rent_or_mortgage_amount",
+        "question": "How much do you pay for rent or mortgage each month?",
+        "explanation": "Include only your household's share if you split costs with people outside your household",
+        "example": "If your rent is $1,200 and you split it evenly with a roommate who buys their own food, answer 600",
+        "input": "money",
+        "alsoSet": { "shelter.frequency": "monthly" },
+        "askIf": { "field": "shelter.living_situation", "includesAny": ["rent", "own", "with_relatives"] }
+    },
+    "propertyTax": {
+        "section": "housing", "scope": "household", "path": "shelter.property_taxes_annual",
+        "question": "How much property tax do you pay on your home each year?",
+        "explanation": "Enter 0 if it's included in your mortgage payment",
+        "example": "",
+        "input": "money",
+        "askIf": { "field": "shelter.living_situation", "includesAny": ["own"] }
+    },
+    "homeInsurance": {
+        "section": "housing", "scope": "household", "path": "shelter.homeowners_insurance_annual",
+        "question": "How much do you pay for homeowner's insurance each year?",
+        "explanation": "Enter 0 if it's included in your mortgage payment",
+        "example": "",
+        "input": "money",
+        "askIf": { "field": "shelter.living_situation", "includesAny": ["own"] }
+    },
+    "paysHeat": {
+        "section": "housing", "scope": "household", "path": "shelter.pays_heat_separately",
+        "question": "Do you pay for heat separately from your rent or mortgage?",
+        "explanation": "",
+        "example": "If you get a gas bill for your heat, answer yes. If heat is included in your rent, answer no",
+        "input": "yesno",
+        "askIf": null
+    },
+    "heatType": {
+        "section": "housing", "scope": "household", "path": "shelter.heat_type",
+        "question": "What kind of heat do you have?",
+        "explanation": "",
+        "example": "",
+        "input": "select",
+        "options": [
+            { "value": "gas", "label": "Gas" },
+            { "value": "electric", "label": "Electric" },
+            { "value": "oil", "label": "Oil" },
+            { "value": "propane", "label": "Propane" },
+            { "value": "wood", "label": "Wood" },
+            { "value": "coal", "label": "Coal" },
+            { "value": "other", "label": "Other" }
+        ],
+        "askIf": { "field": "shelter.pays_heat_separately", "equals": true }
+    },
+    "heatCompany": {
+        "section": "housing", "scope": "household", "path": "shelter.heat_company",
+        "question": "What company do you pay for heat?",
+        "explanation": "",
+        "example": "Con Edison, National Grid",
+        "input": "text",
+        "askIf": { "field": "shelter.pays_heat_separately", "equals": true }
+    },
+    "heatAccount": {
+        "section": "housing", "scope": "household", "path": "shelter.heat_account",
+        "question": "What is your heating account number?",
+        "explanation": "It's on your heating bill",
+        "example": "",
+        "input": "text",
+        "skipValue": "", "skipLabel": "I don't have it",
+        "askIf": { "field": "shelter.pays_heat_separately", "equals": true }
+    },
+    "paysAirConditioning": {
+        "section": "housing", "scope": "household", "path": "shelter.pays_air_conditioning",
+        "question": "Do you pay for air conditioning, either in your electric bill or as a separate fee?",
+        "explanation": "",
+        "example": "If you use an air conditioner and pay your own electric bill, answer yes",
+        "input": "yesno",
+        "askIf": null
+    },
+    "paysOtherUtilities": {
+        "section": "housing", "scope": "household", "path": "shelter.pays_other_utilities",
+        "question": "Do you pay separately for any other utilities?",
+        "explanation": "For example electricity, cooking gas, water, trash, or a fee to set up utilities",
         "example": "If you pay your own electric bill, answer yes",
         "input": "yesno",
         "askIf": null
     },
-
-    "isStudent":{
-        "question": "Are you currently enrolled in college or a training program",
-        "explanation": "This includes community college, university, and trade or vocational school",
-        "example": "If you take classes at a community college, answer yes",
+    "someoneElsePays": {
+        "section": "housing", "scope": "household", "path": "shelter.someone_else_pays",
+        "question": "Does anyone else pay any of these housing costs for you?",
+        "explanation": "For example Section 8 or another housing program",
+        "example": "",
         "input": "yesno",
         "askIf": null
     },
+    "someoneElsePaysDetails": {
+        "section": "housing", "scope": "household", "path": "shelter.someone_else_pays_details",
+        "question": "Who pays what?",
+        "explanation": "",
+        "example": "Section 8 pays $900 of my rent",
+        "input": "longtext",
+        "askIf": { "field": "shelter.someone_else_pays", "equals": true }
+    },
 
-    "enrollmentStatus":{
-        "question": "Are you enrolled full-time or part-time",
-        "explanation": "Half-time or more usually means 6 or more credit hours per term. Check with your school if you are not sure",
-        "example": "If you take 12 credits this semester, choose full-time",
+    "paysChildSupport": {
+        "section": "expenses", "scope": "household", "path": "household.pays_child_support",
+        "question": "Does anyone in your household pay court-ordered child support?",
+        "explanation": "This can lower how much income SNAP counts",
+        "example": "",
+        "input": "yesno",
+        "addRows": "child_support",
+        "askIf": null
+    },
+    "childSupportMember": {
+        "section": "expenses", "scope": "child_support", "path": "member_id",
+        "question": "Who pays this child support?",
+        "explanation": "",
+        "example": "",
+        "input": "member",
+        "askIf": null
+    },
+    "childSupportChildren": {
+        "section": "expenses", "scope": "child_support", "path": "children",
+        "question": "Which children is it paid for?",
+        "explanation": "",
+        "example": "Sofia Lopez",
+        "input": "text",
+        "askIf": null
+    },
+    "childSupportAmount": {
+        "section": "expenses", "scope": "child_support", "path": "amount",
+        "question": "How much is each payment?",
+        "explanation": "",
+        "example": "200",
+        "input": "money",
+        "askIf": null
+    },
+    "childSupportFrequency": {
+        "section": "expenses", "scope": "child_support", "path": "frequency",
+        "question": "How often is it paid?",
+        "explanation": "",
+        "example": "",
         "input": "select",
-        "options": ["full-time", "half-time", "less than half-time"],
-        "askIf": { "field": "isStudent", "equals": true }
+        "options": [
+            { "value": "weekly", "label": "Every week" },
+            { "value": "biweekly", "label": "Every two weeks" },
+            { "value": "semi_monthly", "label": "Twice a month" },
+            { "value": "monthly", "label": "Once a month" }
+        ],
+        "askIf": null
     },
 
-    "hasWorkStudy":{
-        "question": "Do you have a federal or state work-study job",
-        "explanation": "Work-study is a job you got through your financial aid package",
-        "example": "If your financial aid award letter lists work-study and you have a campus job through it, answer yes",
-        "input": "yesno",
-        "askIf": { "field": "isStudent", "equals": true }
+    "fleeingFelon": {
+        "section": "legal", "scope": "household", "path": "legal.fleeing_felon_or_parole_violation",
+        "question": "Is anyone in your household breaking a condition of probation or parole, or running from a felony charge, and being actively looked for by police?",
+        "explanation": "The law requires us to ask everyone these questions",
+        "example": "",
+        "input": "who",
+        "askIf": null
+    },
+    "courtParoleViolation": {
+        "section": "legal", "scope": "household", "path": "legal.court_found_parole_violation",
+        "question": "Has a court found that anyone in your household is violating probation or parole?",
+        "explanation": "",
+        "example": "",
+        "input": "who",
+        "askIf": null
+    },
+    "snapFraud": {
+        "section": "legal", "scope": "household", "path": "legal.snap_fraud_disqualified",
+        "question": "Has anyone in your household ever been disqualified from SNAP for fraud or breaking program rules on purpose?",
+        "explanation": "",
+        "example": "",
+        "input": "who",
+        "askIf": null
+    },
+    "tradedForWeaponsOrDrugs": {
+        "section": "legal", "scope": "household", "path": "legal.traded_snap_for_weapons_or_drugs",
+        "question": "Since September 22, 1996, has anyone in your household been convicted of trading SNAP benefits for guns, ammunition, explosives or drugs?",
+        "explanation": "",
+        "example": "",
+        "input": "who",
+        "askIf": null
+    },
+    "soldSnap": {
+        "section": "legal", "scope": "household", "path": "legal.sold_snap_500_or_more",
+        "question": "Since September 22, 1996, has anyone in your household been convicted of buying or selling $500 or more of SNAP benefits?",
+        "explanation": "",
+        "example": "",
+        "input": "who",
+        "askIf": null
+    },
+    "duplicateSnap": {
+        "section": "legal", "scope": "household", "path": "legal.received_duplicate_snap",
+        "question": "Since September 22, 1996, has anyone in your household been convicted of getting SNAP in more than one place at the same time by lying about who they are or where they live?",
+        "explanation": "",
+        "example": "",
+        "input": "who",
+        "askIf": null
     },
 
-    "hasChildUnder6":{
-        "question": "Do you take care of a child under 6 years old",
-        "explanation": "The child must live with you and be part of your household",
-        "example": "If your 4-year-old daughter lives with you, answer yes",
+    "wantsAuthorizedRep": {
+        "section": "final", "scope": "household", "path": "authorized_rep.wants_rep",
+        "question": "Do you want someone outside your household to be able to apply for you or use an EBT card to buy food for you?",
+        "explanation": "This is called an authorized representative. It's optional",
+        "example": "A neighbor who does your grocery shopping",
         "input": "yesno",
-        "askIf": { "field": "isStudent", "equals": true }
+        "askIf": null
     },
-
-    "inCTEProgram":{
-        "question": "Are you in a career or technical education program",
-        "explanation": "These programs train you for a specific job, like nursing, welding, or medical assisting",
-        "example": "If you are in a certified nursing assistant program, answer yes",
+    "authorizedRepName": {
+        "section": "final", "scope": "household", "path": "authorized_rep.name",
+        "question": "What is your representative's full name?",
+        "explanation": "",
+        "example": "",
+        "input": "text",
+        "askIf": { "field": "authorized_rep.wants_rep", "equals": true }
+    },
+    "authorizedRepAddress": {
+        "section": "final", "scope": "household", "path": "authorized_rep.address",
+        "question": "What is your representative's address?",
+        "explanation": "",
+        "example": "",
+        "input": "address",
+        "askIf": { "field": "authorized_rep.wants_rep", "equals": true }
+    },
+    "authorizedRepPhone": {
+        "section": "final", "scope": "household", "path": "authorized_rep.phone",
+        "question": "What is your representative's phone number?",
+        "explanation": "",
+        "example": "",
+        "input": "phone",
+        "askIf": { "field": "authorized_rep.wants_rep", "equals": true }
+    },
+    "authorizedRepEbt": {
+        "section": "final", "scope": "household", "path": "authorized_rep.wants_ebt_card",
+        "question": "Should your representative get their own EBT card to buy food for you?",
+        "explanation": "",
+        "example": "",
         "input": "yesno",
-        "askIf": { "field": "isStudent", "equals": true }
+        "askIf": { "field": "authorized_rep.wants_rep", "equals": true }
+    },
+    "notes": {
+        "section": "final", "scope": "household", "path": "notes",
+        "question": "Is there anything else you want SNAP to know?",
+        "explanation": "If you are renewing, tell us what has changed since last time, like a move, a new baby, or someone moving in or out",
+        "example": "",
+        "input": "longtext",
+        "skipValue": "", "skipLabel": "Nothing to add",
+        "askIf": null
     }
 }

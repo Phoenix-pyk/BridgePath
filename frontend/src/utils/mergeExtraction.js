@@ -1,104 +1,130 @@
 // frontend/src/utils/mergeExtraction.js
 //
-// Accumulates one document's extracted fields into the household profile
-// (BridgeContext's `applicant`). The applicant's own record is the one
-// person guaranteed to reappear across documents (their ID, lease, paystub),
-// so it's found-or-created and fill-null merged. Everything else is tagged
-// with which document produced it and appended; re-uploading that same
-// document type (the "fixing" flow) replaces only its own prior
-// contributions, mirroring the replace-by-type pattern intakeUpload.jsx
-// already uses for `documents`. No fuzzy name-matching across documents.
+// Accumulates one upload's extracted fields (plain values from /api/extract)
+// into BridgeContext's `applicant` (every leaf { value, source }, see
+// applicantModel.js). Extracted values are tagged source "document".
+//
+// Only empty fields are ever filled, so an earlier document's value, and
+// anything the user answered, is never overwritten. The applicant (row 1) is
+// the one person expected across documents (ID, lease, paystub), so their
+// record is fill-null merged. Every other person, income and asset is a new
+// row tagged with the upload's id; removeUploads() drops those rows again
+// when a document is re-uploaded in the "fixing" flow. No fuzzy
+// name-matching of non-applicant people across documents.
 
-function isEmpty(v) {
-  return v === null || v === undefined || v === "";
+import {
+  ASSET_DOCUMENT_KEYS, INCOME_DOCUMENT_KEYS, MEMBER_DOCUMENT_KEYS, SHELTER_DOCUMENT_KEYS,
+  UTILITY_DOCUMENT_KEYS, field, isAnswered, makeAsset, makeIncome, makeMember, makeUtility,
+} from "./applicantModel.js";
+
+function isEmptyValue(v) {
+  return v === null || v === undefined || v === "" || (Array.isArray(v) && v.length === 0);
 }
 
-function fillNullMerge(existing, incoming, keys) {
-  const next = { ...existing };
+// Fill each empty field in `target` from the plain `incoming` object
+function fillEmpty(target, incoming, keys) {
+  const next = { ...target };
   for (const key of keys) {
-    if (isEmpty(next[key]) && !isEmpty(incoming[key])) next[key] = incoming[key];
-  }
-  return next;
-}
-
-const MEMBER_KEYS = [
-  "first_name", "last_name", "dob", "ssn", "is_applicant", "relationship_to_applicant",
-  "is_student", "citizen_status", "sex", "marital_status", "highest_grade_completed",
-  "is_pregnant", "pregnancy_due_date", "has_work_limiting_condition", "is_veteran",
-];
-
-function mergeMembers(existingMembers, incomingMembers, documentType) {
-  // Keep the applicant's record regardless of source; drop this document
-  // type's own previous non-applicant contributions (handles re-upload).
-  let next = existingMembers.filter(
-    (m) => m.is_applicant || m._source_document_type !== documentType
-  );
-  for (const incoming of incomingMembers || []) {
-    if (incoming.is_applicant) {
-      const idx = next.findIndex((m) => m.is_applicant);
-      if (idx === -1) {
-        next.push({ other_names: [], ...incoming });
-      } else {
-        next[idx] = fillNullMerge(next[idx], incoming, MEMBER_KEYS);
-        next[idx].other_names = [
-          ...new Set([...(next[idx].other_names || []), ...(incoming.other_names || [])]),
-        ];
-      }
-    } else {
-      next.push({ other_names: [], ...incoming, _source_document_type: documentType });
+    if (!isAnswered(next[key]) && !isEmptyValue(incoming?.[key])) {
+      next[key] = field(incoming[key], "document");
     }
   }
   return next;
 }
 
-function mergeIncomes(existingIncomes, incomingIncomes, documentType) {
-  const kept = existingIncomes.filter((i) => i._source_document_type !== documentType);
-  const added = (incomingIncomes || []).map((i) => ({ ...i, _source_document_type: documentType }));
-  return [...kept, ...added];
+function normName(first, last) {
+  return `${first ?? ""}${last ?? ""}`.toLowerCase().replace(/[^a-z]/g, "");
 }
 
-const SHELTER_KEYS = [
-  "rent_or_mortgage_amount", "frequency", "landlord_name", "landlord_phone",
-  "property_taxes_annual", "homeowners_insurance_annual", "lease_start_date",
-];
+function findMemberId(members, individualName) {
+  if (isEmptyValue(individualName)) return null;
+  const target = normName(individualName, "");
+  const match = members.find(
+    (m) => normName(m.first_name.value, m.last_name.value) === target && target !== ""
+  );
+  return match ? match.id : null;
+}
 
-function mergeUtilities(existingUtilities, incomingUtilities) {
-  const next = [...(existingUtilities || [])];
-  for (const incoming of incomingUtilities || []) {
-    const matchIndex = next.findIndex((u) => u.utility_type === incoming.utility_type);
-    if (matchIndex === -1) next.push(incoming);
-    else next[matchIndex] = fillNullMerge(next[matchIndex], incoming, ["is_included_in_rent", "monthly_cost"]);
+function mergeMembers(members, incomingMembers, uploadId) {
+  const next = [...members];
+  for (const incoming of incomingMembers || []) {
+    if (incoming.is_applicant) {
+      const idx = next.findIndex((m) => m.is_applicant.value === true);
+      if (idx === -1) {
+        next.unshift(fillEmpty(makeMember({ is_applicant: field(true, "user") }), incoming, MEMBER_DOCUMENT_KEYS));
+        continue;
+      }
+      const merged = fillEmpty(next[idx], incoming, MEMBER_DOCUMENT_KEYS);
+      // other_names is a list: union document names in rather than only filling when empty
+      const names = [...new Set([...(next[idx].other_names.value || []), ...(incoming.other_names || [])])];
+      if (names.length > (next[idx].other_names.value || []).length) {
+        merged.other_names = field(names, next[idx].other_names.source ?? "document");
+      }
+      next[idx] = merged;
+    } else {
+      // makeMember's is_applicant (false) counts as answered, so it isn't overwritten
+      next.push(fillEmpty(makeMember({ _upload_id: uploadId }), incoming, MEMBER_DOCUMENT_KEYS));
+    }
   }
   return next;
 }
 
-function mergeShelter(existingShelter, incomingShelter) {
-  if (!incomingShelter) return existingShelter;
-  if (!existingShelter) return { utilities: [], ...incomingShelter };
+function mergeShelter(shelter, incoming) {
+  if (!incoming) return shelter;
+  const next = fillEmpty(shelter, incoming, SHELTER_DOCUMENT_KEYS);
+  const utilities = [...shelter.utilities];
+  for (const u of incoming.utilities || []) {
+    const idx = utilities.findIndex((existing) => existing.utility_type.value === u.utility_type);
+    if (idx === -1) utilities.push(fillEmpty(makeUtility(), u, UTILITY_DOCUMENT_KEYS));
+    else utilities[idx] = fillEmpty(utilities[idx], u, UTILITY_DOCUMENT_KEYS);
+  }
+  next.utilities = utilities;
+  return next;
+}
+
+export function mergeExtraction(applicant, fields, uploadId) {
+  const top = fillEmpty(applicant, fields, ["primary_address", "mailing_address"]);
+  const household_members = mergeMembers(applicant.household_members, fields.household_members, uploadId);
+
+  const incomes = [
+    ...applicant.incomes,
+    ...(fields.incomes || []).map((inc) => {
+      const row = fillEmpty(makeIncome({ _upload_id: uploadId }), inc, INCOME_DOCUMENT_KEYS);
+      const memberId = findMemberId(household_members, inc.individual_name);
+      if (memberId) row.member_id = field(memberId, "document");
+      return row;
+    }),
+  ];
+
+  const assets = [
+    ...applicant.assets,
+    ...(fields.assets || []).map((a) => fillEmpty(makeAsset({ _upload_id: uploadId }), a, ASSET_DOCUMENT_KEYS)),
+  ];
+
   return {
-    ...fillNullMerge(existingShelter, incomingShelter, SHELTER_KEYS),
-    utilities: mergeUtilities(existingShelter.utilities, incomingShelter.utilities),
+    ...top,
+    household_members,
+    incomes,
+    assets,
+    shelter: mergeShelter(applicant.shelter, fields.shelter),
   };
 }
 
-function mergeAssets(existingAssets, incomingAssets, documentType) {
-  const kept = existingAssets.filter((a) => a._source_document_type !== documentType);
-  const added = (incomingAssets || []).map((a) => ({ ...a, _source_document_type: documentType }));
-  return [...kept, ...added];
-}
-
-export function mergeExtraction(applicant, fields, documentType) {
-  const top = fillNullMerge(
-    { primary_address: applicant.primary_address, mailing_address: applicant.mailing_address },
-    { primary_address: fields.primary_address ?? null, mailing_address: fields.mailing_address ?? null },
-    ["primary_address", "mailing_address"]
-  );
+// Drop the people, incomes and assets that came from these uploads. Values
+// already filled into the applicant's own record, the address or shelter
+// stay, since they can't be told apart from other documents' values.
+export function removeUploads(applicant, uploadIds) {
+  const ids = new Set(uploadIds);
+  if (ids.size === 0) return applicant;
+  const keep = (row) => !ids.has(row._upload_id);
+  const household_members = applicant.household_members.filter(keep);
+  const memberIds = new Set(household_members.map((m) => m.id));
+  // Unlink rows that pointed at a removed person
+  const unlink = (row) => (row.member_id.value && !memberIds.has(row.member_id.value) ? { ...row, member_id: field() } : row);
   return {
-    ...top,
-    household_members: mergeMembers(applicant.household_members, fields.household_members, documentType),
-    incomes: mergeIncomes(applicant.incomes, fields.incomes, documentType),
-    shelter: mergeShelter(applicant.shelter, fields.shelter),
-    assets: mergeAssets(applicant.assets, fields.assets, documentType),
-    extra: applicant.extra,
+    ...applicant,
+    household_members,
+    incomes: applicant.incomes.filter(keep).map(unlink),
+    assets: applicant.assets.filter(keep).map(unlink),
   };
 }
