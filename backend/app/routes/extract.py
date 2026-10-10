@@ -60,7 +60,7 @@ async def extract_document(file: UploadFile = File(...)):
             detail=GENERIC_FAILURE_DETAIL,
         )
 
-    doc_type = extraction_result.doc_type_detected or "UNKNOWN"
+    doc_type = extraction_result.doc_type_detected.value
     issues_list = extraction_result.issues_or_missing_info or []
     is_flagged = len(issues_list) > 0
 

@@ -1,28 +1,20 @@
 import { useContext, useState } from "react";
 import { BridgeContext } from "../context/BridgeContext.jsx";
-import QuestionBank from "../data/QuestionBank.json";
+import { CATEGORIES, DOCUMENT_TYPES } from "../data/documentTypes.js";
 import { pickFile } from "../utils/documentScanner.js";
 import { extract } from "../utils/api.js";
-
-const DOC_LABELS = {
-    id: "Photo ID",
-    pay_stub: "Pay stub",
-    lease: "Lease",
-    aid_letter: "Financial aid letter",
-};
+import { mergeExtraction } from "../utils/mergeExtraction.js";
 
 export default function IntakeUpload({ goNext }) {
-    const { fields, documents, fixing, setFields, setDocuments, setQuestionQueue } =
+    const { documents, fixing, setApplicant, setDocuments, setQuestionQueue } =
         useContext(BridgeContext);
 
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState(null);
 
     // When fixing, only show the documents that need to be re-uploaded
-    const checklist =
-        fixing && fixing.type === "document"
-            ? fixing.items
-            : ["id", "pay_stub", "lease", "aid_letter"];
+    const isFixing = fixing && fixing.type === "document";
+    const checklist = isFixing ? fixing.items : Object.keys(DOCUMENT_TYPES);
 
     async function handleUpload(useCamera) {
         let image;
@@ -40,23 +32,21 @@ export default function IntakeUpload({ goNext }) {
             const response = await extract(image);
             // response = { documentType, fields, issues }
 
-            // Reject documents that aren't on the checklist (e.g. a pay stub while fixing a lease)
+            // Reject unrecognized documents ("other"), or, when fixing, anything
+            // that isn't one of the documents being re-uploaded
             if (!checklist.includes(response.documentType)) {
-                const expected = checklist.map((d) => DOC_LABELS[d]).join(" or ");
-                setError(`This looks like a ${DOC_LABELS[response.documentType] ?? "different document"}. Please upload your ${expected}.`);
+                if (isFixing) {
+                    const expected = checklist.map((d) => DOCUMENT_TYPES[d]?.label).join(" or ");
+                    setError(`This looks like a ${DOCUMENT_TYPES[response.documentType]?.label ?? "different document"}. Please upload your ${expected}.`);
+                } else {
+                    setError("We couldn't recognize this document. Please upload one of the documents listed above.");
+                }
                 return;
             }
 
-            // Fill in empty fields only, so answers from earlier documents aren't overwritten
-            setFields((prev) => {
-                const next = { ...prev };
-                for (const [name, value] of Object.entries(response.fields)) {
-                    if (next[name] && next[name].value === null) {
-                        next[name] = { value, source: "document" };
-                    }
-                }
-                return next;
-            });
+            // Add this document's data to the household profile without
+            // overwriting answers from earlier documents
+            setApplicant((prev) => mergeExtraction(prev, response.fields, response.documentType));
 
             // Replace any earlier upload of the same document type
             setDocuments((prev) => [
@@ -75,40 +65,49 @@ export default function IntakeUpload({ goNext }) {
     }
 
     function handleContinue() {
-        // Ask only about fields the documents didn't fill in, in QuestionBank order
-        const queue = Object.keys(QuestionBank).filter(
-            (name) => fields[name].value === null
-        );
-        setQuestionQueue(queue);
+        // TODO: build the queue from the fields documents didn't fill once
+        // QuestionBank.json is migrated to the nested applicant shape
+        setQuestionQueue([]);
         goNext();
     }
 
     return (
         <div>
             <h1>Upload your documents</h1>
+            {!isFixing && (
+                <p>Upload any of these that you have. The more you upload, the fewer questions we'll ask.</p>
+            )}
 
-            <ul>
-                {checklist.map((item) => {
-                    const doc = documents.find((d) => d.type === item);
-                    return (
-                        <li key={item}>
-                            {DOC_LABELS[item]}:{" "}
-                            {!doc && "Not uploaded yet"}
-                            {doc && doc.status === "ok" && "✓"}
-                            {doc && doc.status === "flagged" && (
-                                <>
-                                    ⚠️ Needs attention
-                                    <ul>
-                                        {doc.issues.map((issue) => (
-                                            <li key={issue}>{issue}</li>
-                                        ))}
-                                    </ul>
-                                </>
-                            )}
-                        </li>
-                    );
-                })}
-            </ul>
+            {CATEGORIES.map((category) => {
+                const items = checklist.filter((item) => DOCUMENT_TYPES[item]?.category === category);
+                if (items.length === 0) return null;
+                return (
+                    <section key={category}>
+                        <h2>{category}</h2>
+                        <ul>
+                            {items.map((item) => {
+                                const doc = documents.find((d) => d.type === item);
+                                return (
+                                    <li key={item}>
+                                        {DOCUMENT_TYPES[item].label}
+                                        {doc && doc.status === "ok" && " ✓"}
+                                        {doc && doc.status === "flagged" && (
+                                            <>
+                                                {" "}⚠️ Needs attention
+                                                <ul>
+                                                    {doc.issues.map((issue) => (
+                                                        <li key={issue}>{issue}</li>
+                                                    ))}
+                                                </ul>
+                                            </>
+                                        )}
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </section>
+                );
+            })}
 
             <button disabled={uploading} onClick={() => handleUpload(false)}>
                 Upload file
@@ -126,4 +125,3 @@ export default function IntakeUpload({ goNext }) {
         </div>
     );
 }
-
