@@ -8,7 +8,8 @@ BridgePath AI extracts structured applicant data (household members, income, she
 uploaded documents (paystubs, IDs, leases, utility bills, bank statements, benefit award letters, etc.) using
 Gemini Vision, to pre-fill the NYS public assistance applications **LDSS-2921** (Common Application — PA/SNAP/
 Medicaid/Child Care/Services) and **LDSS-4826** (SNAP-only). The repo is a `backend/` (FastAPI + Gemini) and
-`frontend/` (Vite + React) split; the frontend is currently an unmodified Vite scaffold with no app logic yet.
+`frontend/` (Vite + React) split. The frontend now has a step-based intake flow (consent → document upload →
+questions → results → forms) but only the first two steps are implemented; see "Frontend architecture" below.
 
 ## Commands
 
@@ -87,6 +88,48 @@ app/services/analytics.py (telemetry)              BridgePathExtractionPayload (
 - **`app/templates/`** — reference inputs, not code: `1301_ins.pdf` / `4826A_ins.pdf` are the official
   instructions for LDSS-2921 / LDSS-4826 (source of truth for schema/eligibility-factor design); `2921_fillable.pdf`
   / `4826_fillable.pdf` are the blank fillable form PDFs, presumably the eventual target of `pdf_filler.py`.
+
+### Frontend architecture
+
+`frontend/src/App.jsx` is a tiny step machine (`useState("consent")`) that renders one screen per step:
+`consent` → `ConsentScreen`, `upload` → `IntakeUpload`, then `questions`/`results`/`forms` are still unimplemented
+placeholder `<p>`s. `main.jsx` wraps `<App />` in `BridgeProvider`.
+
+- **`src/context/BridgeContext.jsx`** — the single global state store (React Context), created via
+  `BridgeProvider`. Holds `fields` (an object keyed by a fixed flat field list — `fullName`, `dateOfBirth`,
+  `address`, `phone`, `householdSize`, `monthlyIncome`, `employer`, `payFrequency`, `workHours`,
+  `monthlyRent`, `paysUtilities`, `isStudent`, `enrollmentStatus`, `hasWorkStudy`, `hasChildUnder6`,
+  `inCTEProgram` — each `{ value, source }`), plus `documents`, `questionQueue`, `currentQuestion`, `results`,
+  `fixing`, and `forms`, all with setters and a `reset()`.
+- **`src/screens/ConsentScreen.jsx`** — static consent/disclosure screen (data collected, Gemini used to read
+  documents, voice answers processed by Google, nothing is submitted on the user's behalf). Gates the "Continue"
+  button on a single checkbox; still has lorem-ipsum placeholder body copy.
+- **`src/screens/intakeUpload.jsx`** — drives document upload against a checklist (`id`, `pay_stub`, `lease`,
+  `aid_letter`, or whatever subset `fixing.items` specifies when re-uploading a flagged document). Calls
+  `pickFile()` then `extract()`, rejects a document whose `documentType` isn't on the current checklist,
+  fills only currently-`null` fields in context (so an earlier document's answer is never overwritten), and
+  records each upload's status (`ok`/`flagged`) with its issues for display. "Continue" builds
+  `questionQueue` from `QuestionBank.json` keys whose field is still `null`.
+- **`src/utils/documentScanner.js`** — `pickFile(usePhoneCamera)` opens a native file input (or camera capture
+  on mobile via `input.capture = "environment"`) and client-side validates type (jpg/png/pdf) and size (≤10MB)
+  before resolving — a duplicate of the backend's own validation in `extract.py`, done client-side for instant
+  feedback.
+- **`src/utils/api.js`** — `extract(file)` is the only backend call. **`USE_MOCK` is currently hardcoded to
+  `true`**, so it returns a canned `{ documentType: "pay_stub", fields: {...}, issues: [] }` after an 800ms
+  delay instead of calling the real API — the real `fetch(BASE_URL + "/extract", ...)` path (`BASE_URL` from
+  `VITE_API_URL`, default `http://localhost:8000`) is written but dead until someone flips `USE_MOCK` to `false`.
+- **`src/data/QuestionBank.json`** — one entry per frontend field name (`question`, `explanation`, `example`,
+  `input` type, and an `askIf` for conditional follow-ups), used to generate the follow-up questionnaire for
+  whatever `fields` the uploaded documents didn't fill.
+
+**Known schema mismatch (not yet reconciled):** the frontend's `fields` keys are flat and applicant-centric
+(`fullName`, `monthlyIncome`, `employer`, ...), while the backend's real `BridgePathExtractionPayload`
+(`pydantic_schemas.py`) is nested and per-household-member (`household_members[]`, `incomes[]`, `shelter`,
+`assets[]`) with no `fullName`/`monthlyIncome` fields at all. `intakeUpload.jsx`'s field-merging logic only
+works today because `api.js`'s mock response happens to match the frontend's flat shape — wiring `USE_MOCK =
+false` against the real `/api/extract` response will silently fail to populate any fields until either the
+frontend maps the nested payload to its flat keys, or the two schemas are unified. Don't assume this has been
+handled just because both pieces exist.
 
 ### Unimplemented stubs
 
