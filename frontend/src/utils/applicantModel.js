@@ -5,7 +5,8 @@
 // (backend/app/routes/eligibility.py, backend/tests/applicant_fixture.py):
 //
 // - Every leaf fact is a field: exactly { value, source }, nothing else.
-//   source is "document" | "user" | null. value === null means unanswered,
+//   source is "document" | "user" | "derived" (filled in by syncDerived in
+//   applicantEdits.js because it follows from other answers) | null. value === null means unanswered,
 //   which is what the question queue asks about. "" is a real answer (e.g.
 //   "No other phone number"), see skipValue in QuestionBank.json. A list of plain values
 //   (other_names, race, "who" member ids) is a single field.

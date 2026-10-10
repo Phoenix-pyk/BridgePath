@@ -311,7 +311,7 @@ function SingleInput({ entry, options, applicant, initial, onAnswer }) {
     const members = applicant.household_members;
     const [text, setText] = useState(
         Array.isArray(initial) && entry.input === "list" ? initial.join("\n")
-            : initial !== null && typeof initial !== "object" && initial !== "declined" ? String(initial) : ""
+            : initial !== null && typeof initial !== "object" ? String(initial) : ""
     );
     const [chosen, setChosen] = useState(
         Array.isArray(initial) ? initial : initial && Array.isArray(initial.who) ? initial.who : []

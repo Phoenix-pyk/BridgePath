@@ -6,7 +6,7 @@
 
 import { field, makeAsset, makeChildSupportPayment, makeIncome, makeMember } from "./applicantModel.js";
 import {
-    QUESTION_BANK, ROW_ARRAYS, ROW_SOURCES, checklistItems, getIn, splitPath, whoFlagMembers,
+    QUESTION_BANK, ROW_ARRAYS, ROW_SOURCES, ageOf, checklistItems, getIn, splitPath, whoFlagMembers,
 } from "./questionQueue.js";
 
 // Immutable set at a path of keys / array indexes
@@ -71,18 +71,68 @@ function syncRows(applicant, sourceId, yes) {
     return applicant;
 }
 
-// has_snap_disqualification comes from the six legal "who" questions:
-// true if anyone named them, false once all six are answered without them.
+// Facts the questions only ask within an age range (QuestionBank askIf /
+// memberAskIf). Outside it the answer is certain (a 7-year-old isn't a
+// veteran), so it's filled in as source "derived" and the form gets a full
+// Yes/No. If a corrected DOB moves someone into the range, the derived value
+// is cleared so the question is asked.
+const AGE_LIMITED = [
+    { path: "is_veteran", min: 17, value: false },
+    { path: "foster_care_at_18", min: 18, value: false },
+    { path: "is_pregnant", min: 16, value: false },
+    { path: "has_work_limiting_condition", min: 16, value: false },
+    { path: "in_school_or_training", min: 16, max: 17, value: false },
+];
+
+function deriveMember(m) {
+    let next = m;
+    const set = (key, value) => {
+        if (next === m) next = { ...m };
+        next[key] = value;
+    };
+    const age = ageOf(m);
+    if (age !== null) {
+        for (const rule of AGE_LIMITED) {
+            const inRange = age >= rule.min && (rule.max == null || age <= rule.max);
+            const f = m[rule.path];
+            if (!inRange && f.value === null) set(rule.path, field(rule.value, "derived"));
+            if (inRange && f.source === "derived") set(rule.path, field());
+        }
+    }
+    // Never asked of the applicant: they can't be their own boarder/foster person
+    if (m.is_applicant.value === true && m.boarder_or_foster.value === null) {
+        set("boarder_or_foster", field("none", "derived"));
+    }
+    return next;
+}
+
+// Values that follow from other answers, recomputed after every change (source "derived"):
+// - has_snap_disqualification from the six legal "who" questions: true if anyone named
+//   them, false once all six are answered without them
+// - age-limited member facts (AGE_LIMITED) and the applicant's boarder_or_foster
+// - application.alt_format "none" when no other format is needed
 export function syncDerived(applicant) {
     const legal = Object.values(applicant.legal);
     const allAnswered = legal.every((q) => q.answer.value !== null);
     const named = new Set(legal.filter((q) => q.answer.value === true).flatMap((q) => q.who.value || []));
+
+    let application = applicant.application;
+    const needs = application.needs_alt_format.value;
+    if (needs === false && application.alt_format.value === null) {
+        application = { ...application, alt_format: field("none", "derived") };
+    } else if (needs === true && application.alt_format.source === "derived") {
+        application = { ...application, alt_format: field() };
+    }
+
     return {
         ...applicant,
+        application,
         household_members: applicant.household_members.map((m) => {
             const value = named.has(m.id) ? true : allAnswered ? false : null;
-            if (m.has_snap_disqualification.value === value) return m;
-            return { ...m, has_snap_disqualification: field(value, value === null ? null : "user") };
+            const withLegal = m.has_snap_disqualification.value === value
+                ? m
+                : { ...m, has_snap_disqualification: field(value, value === null ? null : "derived") };
+            return deriveMember(withLegal);
         }),
     };
 }

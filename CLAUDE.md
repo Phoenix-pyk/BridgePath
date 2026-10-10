@@ -143,7 +143,7 @@ memberId?, proof?, replace?, reason?}`.
   `questionQueue`, `currentQuestion`, `results`, `fixing`, and `forms`, all with setters and a `reset()`.
 - **`src/utils/applicantModel.js`** — defines `applicant`, which is also the exact body for `POST /api/eligibility`:
   - **Every leaf fact is `field(value, source)` = exactly `{value, source}`** (`source` `"document"` | `"user"` |
-    `null`). The backend's `_is_wrapped` requires exactly those two keys, so never put extra keys on a leaf.
+    `"derived"` (set by `syncDerived` because it follows from other answers) | `null`). The backend's `_is_wrapped` requires exactly those two keys, so never put extra keys on a leaf.
     `value === null` means unanswered; that's what the question queue asks about. A list of plain values
     (`other_names`, `race`, "who" member ids) is one field.
   - Repeating rows (`household_members`, `incomes`, `assets`, `shelter.utilities`, `household.child_support_payments`)
@@ -212,9 +212,14 @@ memberId?, proof?, replace?, reason?}`.
   `buildQueue` (unanswered, unskipped items), `evalCond` (the `askIf` grammar), `questionText` (fills `{name}`; for the applicant rewrites
   "Is {name}" → "Are you" etc., or uses the entry's `questionSelf`), `ageOf`, `memberLabel`. Items are
   `{kind: "question" | "addAnother", qid, scope, memberId?, rowId?, section}`.
-- **`src/utils/applicantEdits.js`** — write side, immutable, all `source: "user"`: `applyAnswer(applicant, item,
-  value)` (also syncs income `individual_name` from `member_id`, applies `alsoSet`, adds/removes `addRows` rows, and
-  re-derives `has_snap_disqualification` from `legal.*` via `syncDerived`), `addRow`, `addPerson`, `removePerson`,
+- **`src/utils/applicantEdits.js`** — write side, immutable, answers are `source: "user"`: `applyAnswer(applicant,
+  item, value)` (also syncs income `individual_name` from `member_id`, applies `alsoSet`, adds/removes `addRows` rows,
+  then runs `syncDerived`). `syncDerived` recomputes `source: "derived"` values after every change:
+  `has_snap_disqualification` from `legal.*`; age-limited member facts outside the age their question is asked at
+  (`AGE_LIMITED`: `is_veteran` <17, `foster_care_at_18` <18, `is_pregnant` / `has_work_limiting_condition` <16,
+  `in_school_or_training` outside 16–17 → `false`, cleared again if a corrected DOB moves the person into range); the
+  applicant's `boarder_or_foster` → `"none"`; `application.alt_format` → `"none"` when `needs_alt_format` is false.
+  These give the PDF a definite Yes/No instead of a blank. Also exports `addRow`, `addPerson`, `removePerson`,
   `confirmRoster`. User-added rows carry bare `_added_by` (the row source id: an addRows question's qid or a checklist
   item's `id`, see `ROW_SOURCES` in questionQueue.js) and asset rows `_row_types`.
 
@@ -243,8 +248,8 @@ memberId?, proof?, replace?, reason?}`.
   - `askIf` — `null` or a condition: `{field, equals | in | gt | includesAny}`, `{age: {min?, max?}}` (member scope,
     from `dob`), `{isEmpty: "<array path>"}`, `{all: [...]}`, `{any: [...]}`, `{not: ...}`. Field paths prefixed
     `member.` / `row.` mean the current person / row; anything else is from the `applicant` root.
-  - `skipValue` + `skipLabel` — optional or voluntary questions store `skipValue` (e.g. `"declined"`, `""`, `[]`,
-    `"NONE"`) so they count as answered and aren't asked again.
+  - `skipValue` + `skipLabel` — optional or voluntary questions store `skipValue` (`""` for "Prefer not to say" /
+    "No other number" etc. so nothing is printed on the PDF, `[]`, or `"NONE"` for a missing SSN as the form asks) so they count as answered and aren't asked again.
   - `addRows` (`income` | `asset` | `child_support`) on a yes/no — "yes" means let the user add rows, which then get
     that scope's questions; `rowTypes` limits `resource_type` for new asset rows. `alsoSet` writes extra fixed
     values with the answer (e.g. `shelter.frequency: "monthly"`).
@@ -271,6 +276,16 @@ remembered for the current visit to the question screen; `data/applicantFullMock
 `extractFullMock.json` are fixtures for those future screens. `npm run lint` reports a few warnings (no errors).
 
 ### Open cross-team issues
+
+**PDF filler gaps (`app/services/pdf_filler.py`, forms side, open).** Found by filling LDSS-4826 from a household
+produced by the real questionnaire; the frontend already sends everything needed:
+- `q__disabled_or_60` only ever gets "Yes": tick "No" when every member's `receives_disability_benefits` is answered
+  and nobody is 60+ (by `dob`).
+- Cash entered under "cash or bank accounts" as resource type `"other"` (label "Other (including cash)") is filed
+  under *other financial assets*; rows with `_added_by == "hasCashOrAccounts"` should count toward cash on hand (or
+  add a cash value to the backend `ResourceType` enum and the frontend options).
+- Frontend still has no `/api/forms` client or forms screen. When adding `createForms` to `api.js`, send the **full**
+  applicant (SSN, phones, addresses go on the form), not `forEligibility`'s stripped copy.
 
 **Eligible non-citizens are screened out (eligibility side, open).** Refugees, asylees and the other qualified
 non-citizens listed on page 10 of `app/templates/4826A_ins.pdf` (7 CFR 273.4) can get SNAP, but

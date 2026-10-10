@@ -202,7 +202,7 @@
         "explanation": "This is optional and does not affect eligibility or benefits",
         "example": "",
         "input": "yesno",
-        "skipValue": "declined", "skipLabel": "Prefer not to say",
+        "skipValue": "", "skipLabel": "Prefer not to say",
         "askIf": { "field": "member.is_applying", "equals": true }
     },
     "race": {
@@ -218,7 +218,7 @@
             { "value": "P", "label": "Native Hawaiian or Pacific Islander" },
             { "value": "W", "label": "White" }
         ],
-        "skipValue": "declined", "skipLabel": "Prefer not to say",
+        "skipValue": "", "skipLabel": "Prefer not to say",
         "askIf": { "field": "member.is_applying", "equals": true }
     },
     "educationLevel": {
@@ -237,7 +237,7 @@
             { "value": "5", "label": "Finished an Individualized Education Plan (IEP)" },
             { "value": "8", "label": "I don't know" }
         ],
-        "skipValue": "declined", "skipLabel": "Prefer not to say",
+        "skipValue": "", "skipLabel": "Prefer not to say",
         "askIf": { "all": [{ "field": "member.is_applying", "equals": true }, { "age": { "min": 16 } }] }
     },
     "highestGrade": {
@@ -256,7 +256,7 @@
         "explanation": "This is optional and does not affect eligibility or benefits",
         "example": "English, Spanish, Bengali",
         "input": "text",
-        "skipValue": "declined", "skipLabel": "Prefer not to say",
+        "skipValue": "", "skipLabel": "Prefer not to say",
         "askIf": { "age": { "min": 16 } }
     },
     "personFlags": {
