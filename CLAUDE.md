@@ -118,56 +118,134 @@ app/services/analytics.py (telemetry)              BridgePathExtractionPayload (
 ### Frontend architecture
 
 `frontend/src/App.jsx` is a tiny step machine (`useState("consent")`) that renders one screen per step:
-`consent` → `ConsentScreen`, `upload` → `IntakeUpload`, then `questions`/`results`/`forms` are still unimplemented
-placeholder `<p>`s. `main.jsx` wraps `<App />` in `BridgeProvider`.
+`consent` → `ConsentScreen`, `upload` → `IntakeUpload`, `roster` → `RosterScreen`, `questions` → `QuestionScreen`,
+`results` → `ResultsScreen`, then `forms` is still an unimplemented placeholder `<p>`. `main.jsx` wraps `<App />` in `BridgeProvider`.
 
 - **`src/context/BridgeContext.jsx`** — the single global state store (React Context), created via
-  `BridgeProvider`. Holds `applicant`, a nested object matching `BridgePathExtractionPayload`'s shape **by key
-  name** (`primary_address`, `mailing_address`, `household_members[]`, `incomes[]`, `shelter`, `assets[]`,
-  plus a frontend-only `extra: {}` bucket for fields with no backend-schema home yet, e.g. phone), plus
-  `documents`, `questionQueue`, `currentQuestion`, `results`, `fixing`, and `forms`, all with setters and a
-  `reset()`. This replaced an earlier flat, single-applicant `fields` shape — the nested shape was adopted
-  specifically because the real LDSS-2921/4826 fillable PDFs have row-indexed repeating fields per household
-  member/income source (confirmed via pypdf inspection of `app/templates/*.pdf`, e.g. `First Name1`/`First
-  Name2`, income `Row1`/`Row2`), which a flat single-applicant model cannot represent.
-- **`src/utils/mergeExtraction.js`** — `mergeExtraction(applicant, fields, documentType)` accumulates one
-  document's extracted `fields` into `applicant` without overwriting earlier documents' answers. The
-  applicant's own household-member record (`is_applicant: true`) is found-or-created and null-fields-only
-  merged, since the applicant is the one person expected to reappear across multiple document types (ID,
-  lease, paystub). Every other household member/income/asset is tagged with `_source_document_type` and
-  appended; re-uploading that same document type (the "fixing" flow) drops only its own prior contributions
-  before appending the new ones — no fuzzy name-matching is attempted across different document types, so two
-  different documents mentioning the same non-applicant household member can currently produce two entries
-  (left for human cleanup on a future review screen rather than guessed at automatically).
+  `BridgeProvider`. Holds `applicant` (shape defined in `utils/applicantModel.js`), plus `documents`,
+  `questionQueue`, `currentQuestion`, `results`, `fixing`, and `forms`, all with setters and a `reset()`.
+- **`src/utils/applicantModel.js`** — defines `applicant`, which is also the exact body for `POST /api/eligibility`:
+  - **Every leaf fact is `field(value, source)` = exactly `{value, source}`** (`source` `"document"` | `"user"` |
+    `null`). The backend's `_is_wrapped` requires exactly those two keys, so never put extra keys on a leaf.
+    `value === null` means unanswered; that's what the question queue asks about. A list of plain values
+    (`other_names`, `race`, "who" member ids) is one field.
+  - Repeating rows (`household_members`, `incomes`, `assets`, `shelter.utilities`, `household.child_support_payments`)
+    are plain arrays of objects whose properties are fields. Rows carry bare bookkeeping (`id`, `_upload_id`,
+    `roster_confirmed`), which the backend ignores.
+  - `household_members[0]` always exists and is the applicant. Incomes/assets point at people via `member_id`
+    (a field holding a member id); "who" answers (`household.on_strike`, `legal.*` as `{answer, who}`) also store
+    member ids, never names. Eligibility still matches income by `individual_name`, so keep it in sync with `member_id`.
+  - Sections beyond the extraction schema (`application`, `extra` phone, `household`, `legal`, `authorized_rep`,
+    `notes`, roster/per-person member fields, extra `shelter` fields) cover the LDSS-4826 questions plus the
+    eligibility rules' inputs (field names match `eligibility_rules.py`). `member.has_snap_disqualification` is
+    meant to be set from the `legal.*` answers by the questions step.
+  - **Shape is grow-only**: add fields, never rename/move them (QuestionBank paths, mergeExtraction, eligibility,
+    and the future PDF filler depend on them).
+- **`src/utils/mergeExtraction.js`** — `mergeExtraction(applicant, fields, uploadId)` wraps one upload's extracted
+  plain values as `source: "document"` and only fills fields that are still empty, so earlier documents and user
+  answers are never overwritten. The applicant (row 1) is fill-null merged (`other_names` unioned); every other
+  person/income/asset becomes a new row tagged `_upload_id`. Incomes get `member_id` by exact normalized-name match
+  when possible. `removeUploads(applicant, uploadIds)` drops those rows (and unlinks dangling `member_id`s) for the
+  "fixing" re-upload flow; values already filled into the applicant/address/shelter are not reverted. No fuzzy
+  name-matching of non-applicant people across documents, so duplicates are left for the roster screen.
 - **`src/screens/ConsentScreen.jsx`** — static consent/disclosure screen (data collected, Gemini used to read
   documents, voice answers processed by Google, nothing is submitted on the user's behalf). Gates the "Continue"
   button on a single checkbox; still has lorem-ipsum placeholder body copy.
-- **`src/screens/intakeUpload.jsx`** — working. Uses `applicant`/`setApplicant`, calls
-  `setApplicant(prev => mergeExtraction(prev, response.fields, response.documentType))` on upload, rejects
-  unrecognized documents (and, in the "fixing" flow, documents not being re-uploaded), and tracks per-document status in
-  `documents`. `handleContinue` is still a **stub** (`setQuestionQueue([])`) until `QuestionBank.json` is migrated.
+- **`src/screens/intakeUpload.jsx`** — working. Each upload gets a `crypto.randomUUID()` id; calls
+  `setApplicant(prev => mergeExtraction(removeUploads(prev, replacedIds), response.fields, uploadId))`. Normal uploads
+  are added alongside earlier ones of the same type (e.g. two birth certificates); in the "fixing" flow they replace
+  earlier uploads of that type. Rejects unrecognized documents (and, when fixing, documents not being re-uploaded);
+  `documents` holds `{id, type, status, issues}` per upload. Errors show `api.js`'s message (e.g. "Can't reach
+  server" when the backend isn't running, or the backend's "Couldn't read this file, try again."). Continue goes to
+  the roster.
+- **`src/screens/RosterScreen.jsx`** — lists `household_members` (with "Found on your <document>" for people from
+  uploads), lets the applicant remove anyone except themselves (`removePerson` also clears every `member_id` / "who"
+  reference to them) and add people by name; Continue marks everyone `roster_confirmed`. No merge-duplicates UI yet
+  (remove one copy instead).
+- **`src/screens/QuestionScreen.jsx`** — paged: every applicable item from `listItems` (answered or not) is a
+  numbered page, with a bottom `Pagination` bar (`« 1 … 33 [34] 35 … 92 End »`, ✓ = answered) to jump to any page,
+  including answered ones to review/change. Back = previous page. After an answer or "Skip for now" it moves to the
+  next unanswered page (`pickPage`, wrapping to earlier ones); the End page lists how many are still unanswered and
+  has "See my results". Pages renumber as answers add/remove follow-ups. Local state only: `skipped`, `doneAdding`,
+  `view`. Unstyled, like the other screens.
+- **`src/screens/ResultsScreen.jsx`** — stage 1 of results: every time it opens (and on "Check again" / "Try
+  again") it calls `api.checkEligibility(applicant)`, stores `response.results` in context `results`, and shows each
+  benefit's status title + backend `reason`, the `missing` items as readable text (questions via
+  `findQuestionForPath` + `questionText`, documents via a local `PROOF_LABELS` map of `document_requirements.py`
+  factor names), and an estimate/right-to-apply disclaimer. "Answer the remaining questions" just returns to
+  `questions` (skipped questions reappear because skips are per-visit). Not built yet: per-item "Answer"/"Upload"
+  buttons via `fixing` (stage 2: `fixing: {type: "question", items}`; stage 3: missing documents → upload checklist,
+  which needs a factor → document-type mapping that doesn't exist in the frontend yet).
+- **`src/utils/questionQueue.js`** — read side, pure: `listItems(applicant, {doneAdding})` (every applicable item
+  in asking order, each with `answered`), `pickPage(items, view, skipped)` (which page to show),
+  `buildQueue` (unanswered, unskipped items), `evalCond` (the `askIf` grammar), `questionText` (fills `{name}`; for the applicant rewrites
+  "Is {name}" → "Are you" etc., or uses the entry's `questionSelf`), `ageOf`, `memberLabel`. Items are
+  `{kind: "question" | "addAnother", qid, scope, memberId?, rowId?, section}`.
+- **`src/utils/applicantEdits.js`** — write side, immutable, all `source: "user"`: `applyAnswer(applicant, item,
+  value)` (also syncs income `individual_name` from `member_id`, applies `alsoSet`, adds/removes `addRows` rows, and
+  re-derives `has_snap_disqualification` from `legal.*` via `syncDerived`), `addRow`, `addPerson`, `removePerson`,
+  `confirmRoster`. User-added rows carry bare `_added_by` (the addRows question id) and asset rows `_row_types`.
 
 - **`src/utils/documentScanner.js`** — `pickFile(usePhoneCamera)` opens a native file input (or camera capture
   on mobile via `input.capture = "environment"`) and client-side validates type (jpg/png/pdf) and size (≤10MB)
   before resolving — a duplicate of the backend's own validation in `extract.py`, done client-side for instant
   feedback.
-- **`src/utils/api.js`** — `extract(file)` is the only backend call. `USE_MOCK` is currently `false`, so it calls the
-  real `POST /api/extract` (`BASE_URL` from `VITE_API_URL`, default `http://localhost:8000`; needs `GEMINI_API_KEY`
-  on the backend). The mock branch still returns the **old flat shape** (`fullName`, `monthlyIncome`, ...), which
-  doesn't match `mergeExtraction`'s nested shape — don't enable it without updating it. There is **no
-  `/api/eligibility` client yet**; when adding one, wrap every applicant leaf as `{value, source}` (see
-  `wrap()` in `backend/tests/applicant_fixture.py`).
+- **`src/utils/api.js`** — **the frontend's only door to the backend**: every request and every response goes
+  through it, and screens never call `fetch` themselves. Add new endpoints (forms, speak, ...) here. `request()`
+  throws an `Error` whose message is the backend's `detail` when present (those details are generic and PII-free
+  by design), otherwise `"Server error: <status>"`, or `"Can't reach server"`.
+  - `extract(file)` → `POST /api/extract` → `{documentType, fields, issues}`.
+  - `checkEligibility(applicant)` → `POST /api/eligibility` → `{results: [...]}`. Sends `{ applicant }` minus
+    identifiers eligibility doesn't need (`forEligibility`: SSN, phones, addresses, landlord/heat account, free-text
+    details, voluntary demographics). Names are kept because eligibility matches income to people by name. Called by
+    `ResultsScreen`.
+  - `USE_MOCK` (currently `false`) makes both return canned nested-shape data without the backend.
 
-- **`src/data/QuestionBank.json`** — one entry per frontend field name (`question`, `explanation`, `example`,
-  `input` type, and an `askIf` for conditional follow-ups), used to generate the follow-up questionnaire for
-  whatever fields the uploaded documents didn't fill. **Still keyed to the old flat field names** — hasn't been
-  migrated to reference the new nested `applicant` shape (e.g. via a `scope`/`path` pair per entry, resolved
-  once per household member/income source). Low priority: only needed once the `questions` screen (still an
-  unimplemented placeholder, see below) is actually built.
+- **`src/data/QuestionBank.json`** — every LDSS-4826 question (99 entries) plus the eligibility rules' inputs, keyed
+  by question id. **File order is asking order**, grouped by `section` (`basics` → `roster` → `person` → `household`
+  → `income` → `resources` → `housing` → `expenses` → `legal` → `final`). Each entry has `question` (`{name}` =
+  the member's first name), `explanation`, `example`, `input`, optional `options` (`[{value, label}]`), and:
+  - `scope` + `path` — where the answer is written. `household`: path from the `applicant` root; `member`: path
+    inside one `household_members[]` row, asked once per person; `income` / `asset` / `child_support`: path inside
+    one row of `incomes` / `assets` / `household.child_support_payments`, asked once per row.
+  - `askIf` — `null` or a condition: `{field, equals | in | gt | includesAny}`, `{age: {min?, max?}}` (member scope,
+    from `dob`), `{isEmpty: "<array path>"}`, `{all: [...]}`, `{any: [...]}`, `{not: ...}`. Field paths prefixed
+    `member.` / `row.` mean the current person / row; anything else is from the `applicant` root.
+  - `skipValue` + `skipLabel` — optional or voluntary questions store `skipValue` (e.g. `"declined"`, `""`, `[]`,
+    `"NONE"`) so they count as answered and aren't asked again.
+  - `addRows` (`income` | `asset` | `child_support`) on a yes/no — "yes" means let the user add rows, which then get
+    that scope's questions; `rowTypes` limits `resource_type` for new asset rows. `alsoSet` writes extra fixed
+    values with the answer (e.g. `shelter.frequency: "monthly"`).
+  - `input` types: `text`, `longtext`, `date`, `number`, `money`, `phone`, `ssn`, `address`, `yesno`, `select`,
+    `multiselect`, `list`, `member` (pick one roster member id), `members` (pick several), `who` (yes/no then pick
+    members; writes `{answer, who}`), `whoFlag` (household-scope; pick members among those passing `memberAskIf`, and
+    `path` is a *member* field set `true` for picked / `false` for the rest — used for pregnancy and work-limiting
+    conditions, asked once for the household like the paper form instead of per person).
+  - `questionSelf` — optional applicant wording when the automatic "{name}" → "you" rewrite reads wrong.
+  - The queue asks a question when its target field's `value === null` and `askIf` passes (unknown age counts as
+    passing). `member.has_snap_disqualification` has no question — `syncDerived` sets it from the `legal.*` answers.
 
-**Current known gaps:** the `questions`, `results`, and `forms` steps are placeholders; nothing in the frontend calls
-`/api/eligibility`; `QuestionBank.json` still uses old flat field names; `data/applicantFullMock.json` and
+**Current known gaps:** the `forms` step is a placeholder; results has no per-item fix buttons yet; "Skip for now" answers are only
+remembered for the current visit to the question screen; `data/applicantFullMock.json` and
 `extractFullMock.json` are fixtures for those future screens. `npm run lint` reports a few warnings (no errors).
+
+### Open cross-team issues
+
+**Eligible non-citizens are screened out (eligibility side, open).** Refugees, asylees and the other qualified
+non-citizens listed on page 10 of `app/templates/4826A_ins.pdf` (7 CFR 273.4) can get SNAP, but
+`snap_standards.ELIGIBLE_CITIZEN_STATUSES` only contains `us_citizen`, `lawful_permanent_resident`,
+`cuban_haitian_entrant` and `cofa_citizen`, and `eligibility_rules.normalize_citizen_status` maps "refugee",
+"asylee", "asylum", "parole", etc. to `other_noncitizen`, which is treated as not eligible. A refugee household is
+therefore told it doesn't qualify.
+- **Eligibility owner:** when working on eligibility, add canonical values for the eligible statuses (e.g. `refugee`,
+  `asylee`, `deportation_withheld`, `trafficking_victim`, ...) to `ELIGIBLE_CITIZEN_STATUSES`, map them in
+  `normalize_citizen_status`, add tests, and decide how to handle the LPR 5-year/under-18/disability conditions. The
+  frontend will send exactly those value strings, so keep them stable once chosen.
+- **Frontend follow-up (Phoenix):** `citizenStatus` in `frontend/src/data/QuestionBank.json` currently offers only
+  the four eligible values above plus a catch-all `other_noncitizen`, so it must get one option per new status.
+  **Claude: whenever you see that `ELIGIBLE_CITIZEN_STATUSES` contains values beyond those four, check whether
+  `citizenStatus`'s options include them; if not, tell Phoenix to update the question (or offer to do it) before
+  anything else.** Delete this issue once both sides are done.
 
 ### Unimplemented stubs
 

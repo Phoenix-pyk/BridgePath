@@ -1,6 +1,9 @@
 import { useState } from "react";
 import ConsentScreen from "./screens/ConsentScreen.jsx";
 import IntakeUpload from "./screens/intakeUpload.jsx";
+import RosterScreen from "./screens/RosterScreen.jsx";
+import QuestionScreen from "./screens/QuestionScreen.jsx";
+import ResultsScreen from "./screens/ResultsScreen.jsx";
 
 export default function App() {
   const [step, setStep] = useState("consent");
@@ -10,15 +13,19 @@ export default function App() {
   }
 
   if (step === "upload") {
-    return <IntakeUpload goNext={() => setStep("questions")} />;
+    return <IntakeUpload goNext={() => setStep("roster")} />;
+  }
+
+  if (step === "roster") {
+    return <RosterScreen goNext={() => setStep("questions")} />;
   }
 
   if (step === "questions") {
-    return <p>Question screen (coming soon)</p>;
+    return <QuestionScreen goNext={() => setStep("results")} />;
   }
 
   if (step === "results") {
-    return <p>Results screen (coming soon)</p>;
+    return <ResultsScreen goNext={() => setStep("forms")} goBack={() => setStep("questions")} />;
   }
 
   if (step === "forms") {

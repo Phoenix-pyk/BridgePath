@@ -3,11 +3,10 @@ import { BridgeContext } from "../context/BridgeContext.jsx";
 import { CATEGORIES, DOCUMENT_TYPES } from "../data/documentTypes.js";
 import { pickFile } from "../utils/documentScanner.js";
 import { extract } from "../utils/api.js";
-import { mergeExtraction } from "../utils/mergeExtraction.js";
+import { mergeExtraction, removeUploads } from "../utils/mergeExtraction.js";
 
 export default function IntakeUpload({ goNext }) {
-    const { documents, fixing, setApplicant, setDocuments, setQuestionQueue } =
-        useContext(BridgeContext);
+    const { documents, fixing, setApplicant, setDocuments } = useContext(BridgeContext);
 
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState(null);
@@ -44,30 +43,38 @@ export default function IntakeUpload({ goNext }) {
                 return;
             }
 
+            // When fixing, this upload replaces earlier uploads of the same type.
+            // Otherwise it's added alongside them (e.g. two children's birth certificates).
+            const uploadId = crypto.randomUUID();
+            const replacedIds = isFixing
+                ? documents.filter((doc) => doc.type === response.documentType).map((doc) => doc.id)
+                : [];
+
             // Add this document's data to the household profile without
             // overwriting answers from earlier documents
-            setApplicant((prev) => mergeExtraction(prev, response.fields, response.documentType));
+            setApplicant((prev) =>
+                mergeExtraction(removeUploads(prev, replacedIds), response.fields, uploadId)
+            );
 
-            // Replace any earlier upload of the same document type
             setDocuments((prev) => [
-                ...prev.filter((doc) => doc.type !== response.documentType),
+                ...prev.filter((doc) => !replacedIds.includes(doc.id)),
                 {
+                    id: uploadId,
                     type: response.documentType,
                     status: response.issues.length === 0 ? "ok" : "flagged",
                     issues: response.issues,
                 },
             ]);
         } catch (err) {
-            setError("Couldn't read this file, try again.");
+            // api.js gives "Can't reach server" or the backend's own (PII-free) message,
+            // e.g. "Couldn't read this file, try again."
+            setError(err.message || "Couldn't read this file, try again.");
         } finally {
             setUploading(false);
         }
     }
 
     function handleContinue() {
-        // TODO: build the queue from the fields documents didn't fill once
-        // QuestionBank.json is migrated to the nested applicant shape
-        setQuestionQueue([]);
         goNext();
     }
 
@@ -86,16 +93,18 @@ export default function IntakeUpload({ goNext }) {
                         <h2>{category}</h2>
                         <ul>
                             {items.map((item) => {
-                                const doc = documents.find((d) => d.type === item);
+                                const uploads = documents.filter((d) => d.type === item);
+                                const issues = [...new Set(uploads.flatMap((d) => d.issues))];
                                 return (
                                     <li key={item}>
                                         {DOCUMENT_TYPES[item].label}
-                                        {doc && doc.status === "ok" && " ✓"}
-                                        {doc && doc.status === "flagged" && (
+                                        {uploads.length > 1 && ` (${uploads.length})`}
+                                        {uploads.length > 0 && issues.length === 0 && " ✓"}
+                                        {issues.length > 0 && (
                                             <>
                                                 {" "}⚠️ Needs attention
                                                 <ul>
-                                                    {doc.issues.map((issue) => (
+                                                    {issues.map((issue) => (
                                                         <li key={issue}>{issue}</li>
                                                     ))}
                                                 </ul>

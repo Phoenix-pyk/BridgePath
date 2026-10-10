@@ -1,19 +1,10 @@
 // frontend/src/context/BridgeContext.jsx
 import { createContext, useState } from "react";
+import { makeEmptyApplicant } from "../utils/applicantModel.js";
 
 export const BridgeContext = createContext();
 
-function makeEmptyApplicant() {
-  return {
-    primary_address: null,
-    mailing_address: null,
-    household_members: [],
-    incomes: [],
-    shelter: null,
-    assets: [],
-    extra: {},
-  };
-}
+// `applicant` shape: see utils/applicantModel.js
 
 export function BridgeProvider({ children }) {
   const [applicant, setApplicant] = useState(makeEmptyApplicant);
