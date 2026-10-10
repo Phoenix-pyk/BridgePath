@@ -105,7 +105,15 @@ app/services/analytics.py (telemetry)              BridgePathExtractionPayload (
   still-missing fields — that aggregation feature doesn't exist yet.
 - **`app/templates/`** — reference inputs, not code: `1301_ins.pdf` / `4826A_ins.pdf` are the official
   instructions for LDSS-2921 / LDSS-4826 (source of truth for schema/eligibility-factor design); `2921_fillable.pdf`
-  / `4826_fillable.pdf` are the blank fillable form PDFs, presumably the eventual target of `pdf_filler.py`.
+  is the blank fillable LDSS-2921 (field names still the Acrobat defaults).
+  `4826_fillable_named.pdf` is the LDSS-4826 fillable form, the eventual target of `pdf_filler.py`; it is the
+  single source of truth (edit it directly in Acrobat, keep names unique). `4826_fillable_original.pdf` is the
+  untouched pre-rename copy, and `4826_field_names.csv` is the inventory of its 298 fields (page, position,
+  printed label, original name, `NEW_NAME`). Field-name convention, separator `__`, 0-based row index:
+  `household_members__i__*`, `incomes__i__*`, `shelter__*`, `primary_address__*` / `mailing_address__*`
+  mirror the applicant shape; `q__<topic>__yes|no|who` are household yes/no questions; `form__*` are
+  signatures/notice options; `education__i__*`, `vehicles__i__*`, `resources__*` are form-only tables; `extra__*`
+  matches the frontend `extra` bucket. Every checkbox is standalone (never a radio group) with export value `Yes`.
 
 ### Frontend architecture
 
