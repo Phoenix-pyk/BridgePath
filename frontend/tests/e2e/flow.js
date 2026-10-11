@@ -98,6 +98,38 @@ export async function answerQuestions(page, overrides = [], { maxPages = 120 } =
     throw new Error("Questionnaire didn't reach the end page");
 }
 
+// Strict version for a complete applicant: every page must match a rule (no
+// "Skip for now", no defaults), or the test fails naming the question it
+// couldn't answer. Ends on "That's everything" and goes to results.
+export async function answerEveryQuestion(page, rules, { maxPages = 150 } = {}) {
+    for (let n = 0; n < maxPages; n++) {
+        await page.waitForLoadState("domcontentloaded");
+        if (await onEndPage(page)) {
+            await expect(page.getByRole("heading", { name: "That's everything" })).toBeVisible();
+            await page.getByRole("button", { name: "See my results" }).click();
+            return;
+        }
+        const heading = await page.getByRole("heading", { level: 1 }).first().innerText();
+        const subjectLine = page.locator(".subject"); // whose question it is, e.g. "Leo Test"
+        const subject = (await subjectLine.count()) ? await subjectLine.innerText() : "";
+        const rule = rules.find(([pattern, , forSubject]) =>
+            pattern.test(heading) && (!forSubject || forSubject.test(subject)));
+        if (!rule) throw new Error(`No answer for question: "${heading}"${subject ? ` (${subject})` : ""}`);
+        const before = await page.locator("body").innerText();
+        await rule[1](page);
+        await page.waitForFunction((prev) => document.body.innerText !== prev, before);
+    }
+    throw new Error("Questionnaire didn't reach the end page");
+}
+
+// Checklist page: tick these lines (by label), then Continue
+export const tick = (...labels) => async (page) => {
+    for (const label of labels) await page.getByRole("checkbox", { name: label }).check();
+    await page.getByRole("button", { name: "Continue" }).click();
+};
+// "Prefer not to say", "No other names", ... (an entry's skipLabel)
+export const pressButton = (name) => (page) => page.getByRole("button", { name, exact: true }).click();
+
 export async function expectResult(page, title) {
     await expect(page.getByRole("heading", { name: `SNAP: ${title}` })).toBeVisible();
 }

@@ -46,7 +46,9 @@ npm run test:e2e:report # opens the HTML report: per-step screenshots + a full t
 
 Unit tests import the real `src/utils` modules and drive the questionnaire with `tests/unit/helpers.js`
 (`runQuestionnaire` answers pages like QuestionScreen does). Browser tests (`tests/e2e/flow.js` helpers) answer
-questions by their visible heading and "Skip for now" everything else; `/api/extract` is answered with fixtures via
+questions by their visible heading and "Skip for now" everything else (except `perfect.spec.js`, a complete applicant
+answered with `answerEveryQuestion`, which fails on any question it has no rule for, so add a rule there when adding
+a question); `/api/extract` is answered with fixtures via
 `page.route` (no Gemini calls), while `/api/eligibility` is the real backend. `playwright.config.js` reuses running
 servers on :8000/:5173 or starts them (backend via `backend/venv` if present). One-time setup after `npm install`:
 `npx playwright install chromium`. Reports/results go to `tests/e2e/report|results` (gitignored).

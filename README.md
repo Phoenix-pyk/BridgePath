@@ -81,7 +81,7 @@ There are three test suites, one per tool:
 | --- | --- | --- | --- |
 | Backend tests | **pytest** | `backend/tests/test_eligibility.py`, `test_forms.py` | SNAP eligibility rules and the `/api/eligibility` route; LDSS-4826 PDF filling and the `/api/forms` route |
 | Frontend unit tests | **Vitest** | `frontend/tests/unit/*.test.js` | `questionBank` (QuestionBank.json checked against the data model), `questionnaire` (a full household run), `paging`, `mergeExtraction` (uploads), `derived` (automatic answers), `fixing` (Answer / Upload buttons), `api` (what's sent to the backend) |
-| Frontend browser tests | **Playwright** | `frontend/tests/e2e/results.spec.js`, `forms.spec.js`, `upload.spec.js` (helpers in `flow.js`) | 8 results-screen scenarios, 2 forms scenarios (download the filled PDF, delete my information) and uploading several files at once, clicked through in Chrome, with screenshots |
+| Frontend browser tests | **Playwright** | `frontend/tests/e2e/results.spec.js`, `forms.spec.js`, `upload.spec.js`, `perfect.spec.js` (helpers in `flow.js`) | 8 results-screen scenarios, 2 forms scenarios (download the filled PDF, delete my information), uploading several files at once, and a complete applicant (six documents, every question answered, filled form checked), clicked through in Chrome, with screenshots |
 
 **Backend** (eligibility + forms, no API key needed), from `backend/`:
 
@@ -114,7 +114,9 @@ npm run test:e2e:report
 
 In the report, click a test, then look under **Attachments** for a screenshot of each step, or open **Trace** to
 replay every click. The scenarios cover: not eligible (not a NY resident, income over the limit), eligible, and each
-"needs something" case with its Answer / Upload fix, plus "can't reach server". They start the backend and frontend
+"needs something" case with its Answer / Upload fix, plus "can't reach server". The **complete applicant** scenario
+(`perfect.spec.js`) uploads six documents, answers every question with no skips (it fails naming any question it has
+no answer for, so a new question in QuestionBank.json needs an answer added there), and checks the downloaded form. They start the backend and frontend
 themselves if those aren't already running, use the real eligibility backend, and answer uploads with fixtures
 instead of calling Gemini.
 
