@@ -39,3 +39,34 @@ export function pickFile(usePhoneCamera = false){
         input.click();
     })
 }
+
+// Open the file picker allowing several files at once. Returns
+// { files: [valid files], rejected: [{ name, reason }] } so one bad file
+// (wrong type or too big) doesn't block the rest, or null if cancelled.
+export function pickFiles(){
+    return new Promise((resolve)=>{
+        const input = document.createElement("input");
+        input.type = "file";
+        input.multiple = true;
+        input.accept = allowedTypes.join(",");
+
+        input.onchange = () => {
+            const chosen = [...input.files];
+            if (chosen.length === 0) return resolve(null);
+            const files = [];
+            const rejected = [];
+            for (const file of chosen) {
+                try {
+                    validate(file);
+                    files.push(file);
+                } catch (err) {
+                    rejected.push({ name: file.name, reason: err.message });
+                }
+            }
+            resolve({ files, rejected });
+        };
+        input.oncancel = () => resolve(null);
+
+        input.click();
+    })
+}

@@ -1,7 +1,7 @@
 import { useContext, useState } from "react";
 import { BridgeContext } from "../context/BridgeContext.jsx";
 import { CATEGORIES, DOCUMENT_TYPES } from "../data/documentTypes.js";
-import { pickFile } from "../utils/documentScanner.js";
+import { pickFile, pickFiles } from "../utils/documentScanner.js";
 import { extract } from "../utils/api.js";
 import { mergeExtraction, removeUploads, replaceTypedIncomes } from "../utils/mergeExtraction.js";
 import { findMember, memberLabel } from "../utils/questionQueue.js";
@@ -16,27 +16,20 @@ export default function IntakeUpload({ goNext }) {
     const { applicant, documents, fixing, setApplicant, setDocuments } = useContext(BridgeContext);
 
     const [uploading, setUploading] = useState(false);
-    const [error, setError] = useState(null);
+    const [progress, setProgress] = useState(null); // { index, total, name } while reading
+    const [problems, setProblems] = useState([]);   // [{ name, message }] from the last upload
+    const [readCount, setReadCount] = useState(0);  // documents read in the last upload
 
     // When fixing, only show the documents that can fix what's missing
     const isFixing = fixing && fixing.type === "document";
     const fixingFor = isFixing && fixing.memberId ? findMember(applicant, fixing.memberId) : null;
     const checklist = isFixing ? fixing.items : Object.keys(DOCUMENT_TYPES);
 
-    async function handleUpload(useCamera) {
-        let image;
+    // Read one file and add it to the household. Returns null on success or
+    // a message to show for this file.
+    async function readFile(file, previousDocuments) {
         try {
-            image = await pickFile(useCamera);
-        } catch (err) {
-            setError(err.message); // wrong type or too big
-            return;
-        }
-        if (!image) return; // user cancelled
-
-        setUploading(true);
-        setError(null);
-        try {
-            const response = await extract(image);
+            const response = await extract(file);
             // response = { documentType, fields, issues }
 
             // Reject unrecognized documents ("other"), or, when fixing, anything
@@ -44,18 +37,17 @@ export default function IntakeUpload({ goNext }) {
             if (!checklist.includes(response.documentType)) {
                 if (isFixing) {
                     const expected = checklist.map((d) => DOCUMENT_TYPES[d]?.label).join(" or ");
-                    setError(`This looks like a ${DOCUMENT_TYPES[response.documentType]?.label ?? "different document"}. Please upload your ${expected}.`);
-                } else {
-                    setError("We couldn't recognize this document. Please upload one of the documents listed above.");
+                    return `This looks like a ${DOCUMENT_TYPES[response.documentType]?.label ?? "different document"}. Please upload your ${expected}.`;
                 }
-                return;
+                return "We couldn't recognize this document. Please upload one of the documents listed above.";
             }
 
             // Normally an upload is added alongside earlier ones of the same type
-            // (e.g. two children's birth certificates); fixing.replace swaps them out.
+            // (e.g. two children's birth certificates); fixing.replace swaps out
+            // the uploads that existed before this batch.
             const uploadId = crypto.randomUUID();
             const replacedIds = isFixing && fixing.replace
-                ? documents.filter((doc) => doc.type === response.documentType).map((doc) => doc.id)
+                ? previousDocuments.filter((doc) => doc.type === response.documentType).map((doc) => doc.id)
                 : [];
             const targetMemberId = isFixing ? fixing.memberId ?? null : null;
 
@@ -77,13 +69,49 @@ export default function IntakeUpload({ goNext }) {
                     issues: response.issues,
                 },
             ]);
+            return null;
         } catch (err) {
             // api.js gives "Can't reach server" or the backend's own (PII-free) message,
             // e.g. "Couldn't read this file, try again."
-            setError(err.message || "Couldn't read this file, try again.");
-        } finally {
-            setUploading(false);
+            return err.message || "Couldn't read this file, try again.";
         }
+    }
+
+    // Upload file: pick one or more files. Take photo: one picture.
+    // Files are read one after another (one Gemini call each, no burst of
+    // requests); a file that fails doesn't stop the rest.
+    async function handleUpload(useCamera) {
+        let files;
+        let rejected = [];
+        try {
+            if (useCamera) {
+                const photo = await pickFile(true);
+                files = photo ? [photo] : null;
+            } else {
+                const picked = await pickFiles();
+                files = picked?.files ?? null;
+                rejected = picked?.rejected ?? [];
+            }
+        } catch (err) {
+            setProblems([{ name: "Photo", message: err.message }]); // wrong type or too big
+            setReadCount(0);
+            return;
+        }
+        if (!files) return; // user cancelled
+
+        setUploading(true);
+        const found = rejected.map((r) => ({ name: r.name, message: r.reason }));
+        let read = 0;
+        for (const [i, file] of files.entries()) {
+            setProgress({ index: i + 1, total: files.length, name: file.name });
+            const message = await readFile(file, documents);
+            if (message) found.push({ name: file.name, message });
+            else read += 1;
+        }
+        setProgress(null);
+        setProblems(found);
+        setReadCount(read);
+        setUploading(false);
     }
 
     function handleContinue() {
@@ -133,14 +161,28 @@ export default function IntakeUpload({ goNext }) {
             })}
 
             <button disabled={uploading} onClick={() => handleUpload(false)}>
-                Upload file
+                Upload files
             </button>
             <button disabled={uploading} onClick={() => handleUpload(true)}>
                 Take photo
             </button>
 
-            {uploading && <p>Reading your document...</p>}
-            {error && <p>{error}</p>}
+            <p>You can select several files at once.</p>
+
+            {progress && (
+                <p>Reading document {progress.index} of {progress.total}: {progress.name}...</p>
+            )}
+            {!uploading && readCount > 1 && <p>{readCount} documents read ✓</p>}
+            {!uploading && problems.length > 0 && (
+                <div>
+                    <p>{problems.length === 1 ? "One file wasn't added:" : `${problems.length} files weren't added:`}</p>
+                    <ul>
+                        {problems.map((p, i) => (
+                            <li key={`${p.name}-${i}`}>{p.name}: {p.message}</li>
+                        ))}
+                    </ul>
+                </div>
+            )}
 
             <button disabled={uploading} onClick={handleContinue}>
                 {isFixing ? "Back to my results" : "Continue"}

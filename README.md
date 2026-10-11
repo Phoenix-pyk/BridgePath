@@ -80,7 +80,7 @@ There are three test suites, one per tool:
 | --- | --- | --- | --- |
 | Backend tests | **pytest** | `backend/tests/test_eligibility.py`, `test_forms.py` | SNAP eligibility rules and the `/api/eligibility` route; LDSS-4826 PDF filling and the `/api/forms` route |
 | Frontend unit tests | **Vitest** | `frontend/tests/unit/*.test.js` | `questionBank` (QuestionBank.json checked against the data model), `questionnaire` (a full household run), `paging`, `mergeExtraction` (uploads), `derived` (automatic answers), `fixing` (Answer / Upload buttons), `api` (what's sent to the backend) |
-| Frontend browser tests | **Playwright** | `frontend/tests/e2e/results.spec.js`, `forms.spec.js` (helpers in `flow.js`) | 8 results-screen scenarios + 2 forms scenarios (download the filled PDF, delete my information) clicked through in Chrome, with screenshots |
+| Frontend browser tests | **Playwright** | `frontend/tests/e2e/results.spec.js`, `forms.spec.js`, `upload.spec.js` (helpers in `flow.js`) | 8 results-screen scenarios, 2 forms scenarios (download the filled PDF, delete my information) and uploading several files at once, clicked through in Chrome, with screenshots |
 
 **Backend** (eligibility + forms, no API key needed), from `backend/`:
 
@@ -190,7 +190,8 @@ Every piece of applicant data lives in one object, `applicant`, in BridgeContext
     [utils/applicantEdits.js](frontend/src/utils/applicantEdits.js) saves the answers.
   - A question is only asked if documents didn't already answer it.
 - **Screens**
-  - [IntakeUpload](frontend/src/screens/intakeUpload.jsx): upload documents.
+  - [IntakeUpload](frontend/src/screens/intakeUpload.jsx): upload documents. Several files can be selected at once;
+    they're read one after another, and any that fail are listed without stopping the rest.
   - [RosterScreen](frontend/src/screens/RosterScreen.jsx): who lives in the household.
   - [QuestionScreen](frontend/src/screens/QuestionScreen.jsx): one question per page, with numbered pages to jump
     back and review.
@@ -218,4 +219,4 @@ See [Running the tests](#running-the-tests).
 - **Styling:** status cards on the results screen, then a consistent look across all screens
 - **Open cross-team issue:** refugees and asylees are currently screened as ineligible (see CLAUDE.md)
 - **After the MVP:** see "Post-MVP improvement ideas" in CLAUDE.md (early "not eligible", saving skipped questions,
-  merging duplicate people, reviewing what documents filled in)
+  merging duplicate people, reviewing what documents filled in, drag-and-drop uploads)

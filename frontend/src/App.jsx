@@ -1,5 +1,6 @@
 import { useContext, useState } from "react";
 import { BridgeContext } from "./context/BridgeContext.jsx";
+import HomeScreen from "./screens/HomeScreen.jsx";
 import ConsentScreen from "./screens/ConsentScreen.jsx";
 import IntakeUpload from "./screens/intakeUpload.jsx";
 import RosterScreen from "./screens/RosterScreen.jsx";
@@ -8,7 +9,7 @@ import ResultsScreen from "./screens/ResultsScreen.jsx";
 import FormsScreen from "./screens/FormsScreen.jsx";
 
 export default function App() {
-  const [step, setStep] = useState("consent");
+  const [step, setStep] = useState("home");
   const { fixing, setFixing } = useContext(BridgeContext);
 
   // Fixing: results sends the user to one screen to fix what's missing
@@ -24,8 +25,12 @@ export default function App() {
     setStep("results");
   }
 
+  if (step === "home") {
+    return <HomeScreen goNext={() => setStep("consent")} />;
+  }
+
   if (step === "consent") {
-    return <ConsentScreen goNext={() => setStep("upload")} />;
+    return <ConsentScreen goNext={() => setStep("upload")} goBack={() => setStep("home")} />;
   }
 
   if (step === "upload") {
@@ -51,6 +56,6 @@ export default function App() {
   }
 
   if (step === "forms") {
-    return <FormsScreen goBack={() => setStep("results")} onDeleted={() => setStep("consent")} />;
+    return <FormsScreen goBack={() => setStep("results")} onDeleted={() => setStep("home")} />;
   }
 }

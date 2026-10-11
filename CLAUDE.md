@@ -138,8 +138,8 @@ app/services/analytics.py (telemetry)              BridgePathExtractionPayload (
 
 ### Frontend architecture
 
-`frontend/src/App.jsx` is a tiny step machine (`useState("consent")`) that renders one screen per step:
-`consent` → `ConsentScreen`, `upload` → `IntakeUpload`, `roster` → `RosterScreen`, `questions` → `QuestionScreen`,
+`frontend/src/App.jsx` is a tiny step machine (`useState("home")`) that renders one screen per step:
+`home` → `HomeScreen`, `consent` → `ConsentScreen`, `upload` → `IntakeUpload`, `roster` → `RosterScreen`, `questions` → `QuestionScreen`,
 `results` → `ResultsScreen`, `forms` → `FormsScreen` (the whole flow is implemented; screens are unstyled). `main.jsx` wraps `<App />` in `BridgeProvider`.
 
 **Fixing loop:** ResultsScreen's "Answer"/"Upload" buttons call `onFix(fix)`; App's `startFixing` stores it in
@@ -180,18 +180,22 @@ memberId?, proof?, replace?, reason?}`.
   non-applicant — no one else on the document is added, and incomes with no name match link to that member.
   `replaceTypedIncomes(applicant, uploadId, memberId)` removes that member's user-typed income rows of the same
   `income_type` once a proof upload added one, so income isn't counted twice.
-- **`src/screens/ConsentScreen.jsx`** — static consent/disclosure screen (data collected, Gemini used to read
-  documents, voice answers processed by Google, nothing is submitted on the user's behalf). Gates the "Continue"
-  button on a single checkbox; still has lorem-ipsum placeholder body copy.
-- **`src/screens/intakeUpload.jsx`** — working. Each upload gets a `crypto.randomUUID()` id; calls
-  `setApplicant(prev => mergeExtraction(removeUploads(prev, replacedIds), response.fields, uploadId))`. Normal uploads
-  are added alongside earlier ones of the same type (e.g. two birth certificates); they replace
-  earlier uploads of that type only if `fixing.replace`. In fixing mode it only accepts `fixing.items`, passes
-  `fixing.memberId` as `mergeExtraction`'s `targetMemberId`, and for `fixing.proof` calls `replaceTypedIncomes`; its
-  button reads "Back to my results". Rejects unrecognized documents (and, when fixing, other document types);
-  `documents` holds `{id, type, status, issues}` per upload. Errors show `api.js`'s message (e.g. "Can't reach
-  server" when the backend isn't running, or the backend's "Couldn't read this file, try again."). Continue goes to
-  the roster.
+- **`src/screens/HomeScreen.jsx`** — landing page: logo, what BridgePath does, and an "I'm ready to apply" button
+  that goes to consent.
+- **`src/screens/ConsentScreen.jsx`** — static consent/disclosure screen, one heading per topic (what we collect, why,
+  who else sees it (Gemini, Google voice), how long we keep it, what this app isn't). Gates "Continue" on a single
+  checkbox; "Back" returns home.
+- **`src/screens/intakeUpload.jsx`** — working. **Upload files** opens a multi-select picker (`pickFiles`); **Take
+  photo** takes one picture (`pickFile(true)`). Selected files are read **one after another** (`readFile`: one
+  `api.extract` call each, so no burst of Gemini requests), with "Reading document 2 of 5: name..." progress; a file
+  that fails (wrong type/size from the picker, unrecognized type, or an extract error) is listed in a "files weren't
+  added" summary and doesn't stop the rest. Each successful file gets a `crypto.randomUUID()` upload id and is merged
+  with `mergeExtraction(removeUploads(prev, replacedIds), response.fields, uploadId, {targetMemberId})`. Normal
+  uploads are added alongside earlier ones of the same type (e.g. two birth certificates); they replace earlier
+  uploads of that type only if `fixing.replace`. In fixing mode it only accepts `fixing.items`, uses `fixing.memberId`
+  as `targetMemberId`, and for `fixing.proof` calls `replaceTypedIncomes`; its button reads "Back to my results".
+  `documents` holds `{id, type, status, issues}` per upload. Error messages are `api.js`'s (e.g. "Can't reach server"
+  or the backend's "Couldn't read this file, try again."). Continue goes to the roster.
 - **`src/screens/RosterScreen.jsx`** — lists `household_members` (with "Found on your <document>" for people from
   uploads), lets the applicant remove anyone except themselves (`removePerson` also clears every `member_id` / "who"
   reference to them) and add people by name; Continue marks everyone `roster_confirmed`. No merge-duplicates UI yet
@@ -215,7 +219,7 @@ memberId?, proof?, replace?, reason?}`.
   form is offered even after `not_eligible` — right to apply), turns each returned base64 PDF into a Blob URL
   download link (`LDSS-4826.pdf`, revoked on unmount), stores form names in context `forms`, lists next steps (sign
   page 8, submit online/mail/in person, phone interview; nothing is submitted for them). "Delete my information and
-  start over" calls `reset()` and returns to consent — this is the consent screen's deletion promise (data otherwise
+  start over" calls `reset()` and returns to the home screen — this is the consent screen's deletion promise (data otherwise
   lives only in tab memory).
 - **`src/utils/fixPlan.js`** — `planFix(applicant, missingItem)` → `{text, answer, upload}` (`answer`/`upload` are
   `fixing` values or `null`): questions map via `findQuestionForPath` (+ the member from `memberIndex`; for income/
@@ -240,9 +244,9 @@ memberId?, proof?, replace?, reason?}`.
   `confirmRoster`. User-added rows carry bare `_added_by` (the row source id: an addRows question's qid or a checklist
   item's `id`, see `ROW_SOURCES` in questionQueue.js) and asset rows `_row_types`.
 
-- **`src/utils/documentScanner.js`** — `pickFile(usePhoneCamera)` opens a native file input (or camera capture
-  on mobile via `input.capture = "environment"`) and client-side validates type (jpg/png/pdf) and size (≤10MB)
-  before resolving — a duplicate of the backend's own validation in `extract.py`, done client-side for instant
+- **`src/utils/documentScanner.js`** — `pickFiles()` opens a multi-select file input and resolves `{files,
+  rejected: [{name, reason}]}` (or `null` if cancelled); `pickFile(usePhoneCamera)` picks one file / camera capture
+  (`input.capture = "environment"`). Both client-side validate type (jpg/png/pdf) and size (≤10MB) — a duplicate of the backend's own validation in `extract.py`, done client-side for instant
   feedback.
 - **`src/utils/api.js`** — **the frontend's only door to the backend**: every request and every response goes
   through it, and screens never call `fetch` themselves. Add new endpoints (forms, speak, ...) here. `request()`
@@ -328,6 +332,10 @@ Not bugs; deliberately deferred until the end-to-end pipeline (upload → questi
   - Any other household-level rule added later (e.g. strikers, resource tests for households that don't get broad-based
     categorical eligibility). Note most of these exclude *individuals*, not the household: only stop early when the
     household as a whole can't qualify.
+- **Drag and drop uploads:** a "Drop your documents here" area on the upload screen feeding the same one-by-one
+  `readFile` loop as **Upload files** (multi-select already works).
+- **Faster multi-file uploads:** read 2 files at a time instead of strictly one after another, if Gemini's rate
+  limits allow it.
 - **Save "Skip for now" across visits** to the question screen (currently local state, so skipped questions reappear).
 - **Roster: merge duplicates** (two documents naming the same non-applicant person) instead of only "Remove".
 - **Review what documents filled in** before/after the questions: list `source: "document"` values with Edit, since a

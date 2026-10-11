@@ -17,16 +17,20 @@ export async function mockUploads(page, responses) {
     );
 }
 
-// Click "Upload file" and choose a (fake) file; the mocked /api/extract decides what it "contains"
-export async function uploadFile(page) {
+// Click "Upload files" and choose (fake) files; the mocked /api/extract decides what each "contains".
+// files: [{ name, mimeType }] (default: one PNG)
+export async function uploadFiles(page, files = [{ name: "document.png", mimeType: "image/png" }]) {
     const chooser = page.waitForEvent("filechooser");
-    await page.getByRole("button", { name: "Upload file" }).click();
-    await (await chooser).setFiles({ name: "document.png", mimeType: "image/png", buffer: Buffer.from("fake image") });
-    await expect(page.getByText("Reading your document...")).toBeHidden();
+    await page.getByRole("button", { name: "Upload files" }).click();
+    await (await chooser).setFiles(files.map((f) => ({ ...f, buffer: Buffer.from("fake file") })));
+    await expect(page.getByText(/^Reading document/)).toBeHidden();
 }
+
+export const uploadFile = (page) => uploadFiles(page);
 
 export async function agreeToConsent(page) {
     await page.goto("/");
+    await page.getByRole("button", { name: "I'm ready to apply" }).click();
     await page.getByRole("checkbox").check();
     await page.getByRole("button", { name: "Continue" }).click();
     await expect(page.getByRole("heading", { name: "Upload your documents" })).toBeVisible();
