@@ -1,48 +1,96 @@
-# BridgePath
+<p align="center">
+  <img src="frontend/src/assets/logo.png" alt="BridgePath" width="360">
+</p>
 
-BridgePath AI helps people apply for New York State public assistance. An applicant uploads documents they
-already have (pay stubs, IDs, leases, utility bills, bank statements, benefit letters, etc.), Gemini Vision reads
-them, a short questionnaire covers whatever the documents didn't, and the app screens the household for SNAP
-eligibility before pre-filling the state application forms:
+<p align="center">
+  <b>Apply for SNAP food benefits in New York from the documents you already have.</b><br>
+  Upload a pay stub, an ID, a lease. BridgePath reads them, asks only what's left, checks whether you're likely to
+  qualify, and hands you a filled-in official application.
+</p>
 
-- **LDSS-4826**: SNAP-only application (the current target)
-- **LDSS-2921**: Common Application (Public Assistance / SNAP / Medicaid / Child Care / Services), later
+---
 
-The more documents someone uploads, the fewer questions they're asked.
+## The problem
 
-## Status
+Applying for SNAP (food stamps) in New York means filling out the **LDSS-4826**: about 8 pages and roughly 80
+questions about every person in the household, every job, every bill and every bank account. Most of those answers
+are already printed on documents people have in a drawer. Filling it out by hand takes hours, mistakes cause
+delays, and many eligible families give up or never start.
 
-| Area | State |
+## What BridgePath does
+
+1. **Upload your documents.** Pay stubs, IDs, birth certificates, leases, utility bills, bank statements, benefit
+   letters: 25 document types. Gemini reads each one and pulls out names, dates, income, rent and more.
+2. **Answer only what's missing.** BridgePath works through every LDSS-4826 question and skips the ones your
+   documents already answered. With all your documents, one person sees about 23 short pages instead of the full
+   form.
+3. **See if you're likely to qualify.** A SNAP eligibility screening using New York's income limits. If something
+   is missing, each item gets an **Answer** or **Upload** button that takes you straight to the fix.
+4. **Get your application.** Download the **official LDSS-4826, filled in** and ready to sign, plus a **checklist
+   PDF** with every answer in order, so you can copy them into the online application (myBenefits.ny.gov or ACCESS
+   HRA).
+
+BridgePath never submits anything for you. You stay in control of your application.
+
+## Screenshots
+
+| Upload documents | One question at a time |
 | --- | --- |
-| `POST /api/extract`: Gemini document extraction | ✅ Working |
-| `POST /api/eligibility`: SNAP eligibility screening | ✅ Working (51 backend tests) |
-| Home page | ✅ Working (logo, what BridgePath does, "I'm ready to apply") |
-| Consent screen | ✅ Working (what we collect, why, who sees it, how long we keep it) |
-| Document upload screen | ✅ Working against the real backend |
-| Household roster screen | ✅ Working |
-| Questions screen | ✅ Working (every LDSS-4826 question, paged) |
-| Results screen | ✅ Working, including "Answer" / "Upload" buttons to fix what's missing |
-| Forms screen + `POST /api/forms`: fills the official LDSS-4826 PDF | ✅ Working (download, then delete your information) |
-| Styling | ✅ Every screen styled (plain CSS, desktop web layout) |
-| Text-to-speech (ElevenLabs) | ⏳ Not started |
+| ![Upload screen with document checklist](docs/screenshots/2-upload.png) | ![A question page](docs/screenshots/3-question.png) |
+| **Eligibility result** | **Your filled application** |
+| ![Results screen](docs/screenshots/4-results.png) | ![Forms screen with downloads](docs/screenshots/5-forms.png) |
 
-## Repository layout
+## Privacy by design
+
+People applying for benefits share their most sensitive information, so BridgePath keeps as little as possible:
+
+- **Nothing is stored.** No database, no accounts. Uploaded files are processed in memory and never written to
+  disk. Your answers live only in your browser tab and are gone when you close it or press **Delete my information**.
+- **No personal data in logs.** The backend logs only anonymous events (document type, eligibility status), never
+  names, numbers, amounts or file contents. Errors returned to the browser are generic and never echo your data.
+- **Only what's needed.** The eligibility check is sent without SSNs, phone numbers or addresses.
+- **Clear consent first**, explaining what is collected, why, and that documents are read by Google's Gemini AI.
+
+## How it works
 
 ```
-backend/    FastAPI: Gemini extraction + SNAP eligibility rules
-frontend/   Vite + React intake app
+Home → Consent → Upload → Roster → Questions → Results ──→ Forms
+                    │                    │         │  ▲       (filled LDSS-4826 + checklist PDF)
+                    ▼                    │         │  └── fix: Answer a question / Upload a document, then re-check
+              /api/extract               │         ▼
+               (Gemini)                  │   /api/eligibility
+                    │                    │   (SNAP rules)
+                    └──── applicant ◄────┘
 ```
 
-## Getting started
+Every fact about the household lives in one `applicant` object in the browser. Each answer remembers where it came
+from (`{ value, source }`, with `source` = `"document"` or `"user"`), so a document never overwrites something you
+typed, and the eligibility check can ask for proof of income you typed in instead of uploading.
 
-> **Copying commands:** every command below is on its own line with no trailing `# comment`. On macOS's default
-> shell (zsh), a pasted `# ...` is **not** treated as a comment and becomes extra arguments, e.g.
-> `error: too many arguments for 'show-report'`. Paste commands as they are, one line at a time if needed.
+| Piece | What it does |
+| --- | --- |
+| **Document reading** ([gemini.py](backend/app/services/gemini.py)) | One Gemini call per document (`gemini-3.5-flash-lite`, structured output against a [Pydantic schema](backend/app/services/pydantic_schemas.py), temperature 0). It also flags problems like a blurry date. |
+| **Question engine** ([QuestionBank.json](frontend/src/data/QuestionBank.json), [questionQueue.js](frontend/src/utils/questionQueue.js)) | Every LDSS-4826 question, with rules for who it applies to (by age, by earlier answers). Only questions the documents didn't answer are asked. |
+| **Eligibility screening** ([eligibility_rules.py](backend/app/services/eligibility_rules.py)) | Residency, who counts in the SNAP household (immigration status, students, shared meals), then the gross income test using [FY2027 standards](backend/app/services/snap_standards.py). Returns what's missing instead of guessing. |
+| **Form filling** ([pdf_filler.py](backend/app/services/pdf_filler.py), [checklist.py](backend/app/services/checklist.py)) | Fills the official fillable LDSS-4826 field by field, and builds the copy-and-paste checklist. Both are made in memory and returned as downloads. |
 
-### Backend
+## Tech stack
 
-Requires Python 3. A Gemini API key (https://aistudio.google.com/apikey) is only needed for document uploads;
-eligibility works without one. Run everything from inside `backend/`, because imports are rooted at `app.*`.
+- **Frontend:** React + Vite, plain CSS
+- **Backend:** Python, FastAPI
+- **AI:** Google Gemini (document reading)
+- **PDFs:** pypdf (filling the official form), reportlab (checklist)
+- **Tests:** pytest, Vitest, Playwright
+
+## Run it locally
+
+You need Python 3, Node.js, and a free Gemini API key from https://aistudio.google.com/apikey (only needed for
+reading documents; everything else works without it).
+
+> Paste the commands below one line at a time, as they are. On macOS (zsh), a pasted `# comment` is treated as extra
+> arguments.
+
+**Backend**, in one terminal:
 
 ```bash
 cd backend
@@ -53,13 +101,10 @@ echo "GEMINI_API_KEY=your-key-here" > .env
 uvicorn app.main:app --reload
 ```
 
-| Command | What it does |
-| --- | --- |
-| `python -m venv venv` / `source venv/bin/activate` | Optional virtualenv (`venv/` is gitignored) |
-| `pip install -r requirements.txt` | Installs dependencies. Re-run it after pulling, since new ones get added (e.g. `pypdf`, `pytest`) |
-| `uvicorn app.main:app --reload` | Starts the API at http://localhost:8000 |
+The API runs at http://localhost:8000. After pulling new changes, run `pip install -r requirements.txt` again, since
+new packages get added.
 
-### Frontend
+**Frontend**, in a second terminal:
 
 ```bash
 cd frontend
@@ -67,171 +112,121 @@ npm install
 npm run dev
 ```
 
-| Command | What it does |
-| --- | --- |
-| `npm run dev` | Dev server at http://localhost:5173 |
-| `npm run build` | Production build |
-| `npm run lint` | oxlint |
+Open http://localhost:5173.
 
-## Running the tests
+### Try it with sample documents
 
-There are three test suites, one per tool:
+[DemoKit/](DemoKit/) has fictional IDs, pay stubs and utility bills made for demos. Click **I'm ready to apply**,
+agree to the consent, upload a few of them, and go through the questions. To see the "needs something" path, skip a
+question or type an income instead of uploading a pay stub: the results screen will show buttons to fix it.
 
-| Suite | Tool | Where | What it covers |
-| --- | --- | --- | --- |
-| Backend tests | **pytest** | `backend/tests/test_eligibility.py`, `test_forms.py` | SNAP eligibility rules and the `/api/eligibility` route; LDSS-4826 PDF filling and the `/api/forms` route |
-| Frontend unit tests | **Vitest** | `frontend/tests/unit/*.test.js` | `questionBank` (QuestionBank.json checked against the data model), `questionnaire` (a full household run), `paging`, `mergeExtraction` (uploads), `derived` (automatic answers), `fixing` (Answer / Upload buttons), `api` (what's sent to the backend) |
-| Frontend browser tests | **Playwright** | `frontend/tests/e2e/results.spec.js`, `forms.spec.js`, `upload.spec.js`, `perfect.spec.js` (helpers in `flow.js`) | 8 results-screen scenarios, 2 forms scenarios (download the filled PDF, delete my information), uploading several files at once, and a complete applicant (six documents, every question answered, filled form checked), clicked through in Chrome, with screenshots |
+## Tests
 
-**Backend** (eligibility + forms, no API key needed), from `backend/`:
+| Suite | Tool | Covers |
+| --- | --- | --- |
+| Backend (92 tests) | pytest | Eligibility rules and route, LDSS-4826 filling, the checklist PDF |
+| Frontend unit (133 tests) | Vitest | The question engine, merging uploads, automatic answers, the fix buttons, what's sent to the backend |
+| Browser (12 scenarios) | Playwright | The whole app clicked through in Chrome, with a screenshot of every step: eligible, not eligible, each "needs something" fix, uploading several files, downloading the form, and a complete applicant who uploads six documents and answers every question |
 
 ```bash
+cd backend
 python -m pytest tests
 ```
 
-**Frontend unit tests** (questionnaire logic, fixing, merging uploads, `api.js`), from `frontend/`:
-
 ```bash
+cd frontend
 npm test
 ```
 
-**Frontend browser tests** (Playwright clicks through the real app in Chrome), from `frontend/`. One-time setup
-after `npm install`:
-
 ```bash
+cd frontend
 npx playwright install chromium
-```
-
-Run the scenarios, then open the report:
-
-```bash
 npm run test:e2e
-```
-
-```bash
 npm run test:e2e:report
 ```
 
-In the report, click a test, then look under **Attachments** for a screenshot of each step, or open **Trace** to
-replay every click. The scenarios cover: not eligible (not a NY resident, income over the limit), eligible, and each
-"needs something" case with its Answer / Upload fix, plus "can't reach server". The **complete applicant** scenario
-(`perfect.spec.js`) uploads six documents, answers every question with no skips (it fails naming any question it has
-no answer for, so a new question in QuestionBank.json needs an answer added there), and checks the downloaded form. They start the backend and frontend
-themselves if those aren't already running, use the real eligibility backend, and answer uploads with fixtures
-instead of calling Gemini.
+Run `npx playwright install chromium` once after `npm install`. The browser tests start both servers themselves,
+use the real eligibility backend, and answer document uploads with fixtures, so they don't use Gemini quota.
+`npm run test:e2e:report` opens a report with screenshots and a step-by-step replay of each test.
 
-| Also useful | What it does |
-| --- | --- |
-| `npx playwright test --headed` | Watch the browser click through |
-| `npx playwright test --ui` | Step through tests interactively |
-| `npx playwright test -g "Answer all"` | Run only tests whose name matches |
-
-The frontend calls the backend at `VITE_API_URL` (default `http://localhost:8000`). If the backend isn't running,
-uploads show "Can't reach server". To work on the UI without the backend, set `USE_MOCK = true` in
-[frontend/src/utils/api.js](frontend/src/utils/api.js), which returns canned data instead of calling the API.
-
-**Trying the whole flow:** run both servers, click "I'm ready to apply", agree to consent, upload documents (or skip), add people on the
-roster, answer the questions, then "See my results". Skipping a question or typing an income instead of uploading
-proof gives "We need a little more information" with buttons to fix each item.
-
-## How it works
+## Project structure
 
 ```
-Home → Consent → Upload → Roster → Questions → Results ──→ Forms (download LDSS-4826)
-                    │                    │         │  ▲
-                    ▼                    │         │  └── fix: Answer a question / Upload a document, then re-check
-              /api/extract               │         ▼
-                    │                    │   /api/eligibility
-                    └──── applicant ◄────┘   (applicant sent through api.js)
-                       (BridgeContext)
+backend/
+  app/routes/       extract.py, eligibility.py, forms.py (the API)
+  app/services/     gemini.py, eligibility_rules.py, pdf_filler.py, checklist.py, ...
+  app/templates/    official LDSS-4826 / LDSS-2921 forms and instructions
+  tests/
+frontend/
+  src/screens/      one folder per screen (.jsx + .css)
+  src/data/         QuestionBank.json, document types
+  src/utils/        question engine, merging uploads, api.js (the only door to the backend)
+  tests/unit/  tests/e2e/
+DemoKit/            fictional sample documents for demos
 ```
 
-Every piece of applicant data lives in one object, `applicant`, in BridgeContext. Each fact is stored as
-`{ value, source }`, where `source` is `"document"` (extracted) or `"user"` (answered), and `value: null` means
-"not answered yet". That same object is the request body for `/api/eligibility`.
+[CLAUDE.md](CLAUDE.md) has detailed architecture notes for developers.
 
-### Backend
+## Limitations
 
-- **[routes/extract.py](backend/app/routes/extract.py)**: `POST /api/extract` takes one file (JPG, PNG or PDF,
-  up to 10 MB) and returns `{ documentType, fields, issues }`. Validates in memory (files are never written to
-  disk); any extraction failure becomes a generic 502.
-- **[services/gemini.py](backend/app/services/gemini.py)**: exactly one Gemini call per document, structured
-  output, `temperature=0`. Only transient upstream errors (429/5xx) are retried.
-- **[services/pydantic_schemas.py](backend/app/services/pydantic_schemas.py)**: the extraction schema. It covers
-  both forms (household members, incomes, shelter costs, assets) and only facts that could be printed on a real
-  document.
-- **[routes/eligibility.py](backend/app/routes/eligibility.py)** and
-  **[services/eligibility_rules.py](backend/app/services/eligibility_rules.py)**: `POST /api/eligibility` takes
-  `{ applicant }` and returns `eligible`, `needs_something` (with a `missing` list of questions or proof documents)
-  or `not_eligible`, with a reason. It's a screening, not a determination, and doesn't estimate benefit amounts.
-  Numbers live in [services/snap_standards.py](backend/app/services/snap_standards.py).
-- **[services/analytics.py](backend/app/services/analytics.py)**: the only logging path. It records document type,
-  flagged yes/no, benefit and status. **No PII is ever logged.**
-- **[services/document_requirements.py](backend/app/services/document_requirements.py)**: which documents prove
-  which eligibility factor, from the official LDSS-2921 instructions.
-- **[templates/](backend/app/templates/)**: official instruction PDFs and blank fillable forms.
+- **A screening, not a decision.** Results are estimates; the local social services office decides. BridgePath
+  doesn't estimate benefit amounts.
+- **SNAP only for now.** The LDSS-2921 Common Application (cash assistance, Medicaid, child care) is the next
+  form; the extraction schema already covers it.
+- **Some eligible immigrants are screened out.** Refugees, asylees and other qualified non-citizens can get SNAP,
+  but the screening doesn't recognize those statuses yet.
+- **People aren't merged across documents.** If two documents name the same person, the roster shows them twice and
+  the applicant removes one.
+- **Desktop web layout.** Not yet optimized for phones.
+- BridgePath is not affiliated with New York State or any government agency.
 
-- **[routes/forms.py](backend/app/routes/forms.py)** and **[services/pdf_filler.py](backend/app/services/pdf_filler.py)**:
-  `POST /api/forms` takes `{ applicant, benefits }` and returns the filled official PDF(s) as base64, in memory only.
+## After the MVP
 
-`routes/speak.py`, `services/cover_sheet.py` and `services/elevenlabs.py` are still empty placeholders.
+Three larger features, planned for after the hackathon.
 
-### Frontend
+### 1. Choose which applications to fill
 
-- **Data**
-  - [utils/applicantModel.js](frontend/src/utils/applicantModel.js): the shape of `applicant`. It can only grow:
-    add fields, never rename them.
-  - [utils/mergeExtraction.js](frontend/src/utils/mergeExtraction.js): adds each upload's results to `applicant`,
-    filling only empty fields, so earlier documents and the user's answers are never overwritten.
-  - [utils/api.js](frontend/src/utils/api.js): the only door to the backend. It leaves out SSNs, phone numbers and
-    addresses when checking eligibility.
-- **Questions**
-  - [data/QuestionBank.json](frontend/src/data/QuestionBank.json): every LDSS-4826 question, with where its answer
-    goes and when to ask it. Related yes/no questions are grouped into "Do any of these apply?" checklists, so one
-    person with all documents sees about 23 pages.
-  - [utils/questionQueue.js](frontend/src/utils/questionQueue.js) decides what to ask, and
-    [utils/applicantEdits.js](frontend/src/utils/applicantEdits.js) saves the answers.
-  - A question is only asked if documents didn't already answer it.
-- **Screens**
-  - [HomeScreen](frontend/src/screens/HomeScreen/HomeScreen.jsx): the landing page with the logo, what BridgePath does and
-    "I'm ready to apply".
-  - [ConsentScreen](frontend/src/screens/ConsentScreen/ConsentScreen.jsx): what we collect and why, who else sees it, how long
-    we keep it. "Continue" is enabled once the box is ticked.
-  - [IntakeUpload](frontend/src/screens/intakeUpload/intakeUpload.jsx): upload documents. Several files can be selected at once;
-    they're read one after another, and any that fail are listed without stopping the rest.
-  - [RosterScreen](frontend/src/screens/RosterScreen/RosterScreen.jsx): who lives in the household.
-  - [QuestionScreen](frontend/src/screens/QuestionScreen/QuestionScreen.jsx): one question per page, with numbered pages to jump
-    back and review.
-  - [ResultsScreen](frontend/src/screens/ResultsScreen/ResultsScreen.jsx): the eligibility result. Each missing item gets
-    **Answer** and/or **Upload** buttons. An upload made for a specific person fills that person's details, and
-    uploaded proof of income replaces the amount the user typed. See
-    [utils/fixPlan.js](frontend/src/utils/fixPlan.js) and [data/fixSources.js](frontend/src/data/fixSources.js).
-  - [FormsScreen](frontend/src/screens/FormsScreen/FormsScreen.jsx): creates and downloads the filled LDSS-4826, lists next
-    steps, and "Delete my information and start over" returns to the home page with nothing kept.
-- **Styling** (plain CSS, no UI libraries, desktop web layout, no mobile breakpoints)
-  - [index.css](frontend/src/index.css): theme variables in `:root` (logo colors, Inter font, spacing, radius) and
-    the shared styles: header with logo and progress bar, a 560px centered column, buttons (`btn-primary`,
-    `btn-link`, `btn-small`, `btn-danger`), large choice buttons (`.options`), checkbox rows, inputs. Every color
-    comes from a `:root` variable.
-  - Each screen has its own folder holding its `.jsx` and `.css` (e.g. `screens/ResultsScreen/ResultsScreen.css`), and the screen imports its CSS.
-  - The header and progress bar are rendered by [App.jsx](frontend/src/App.jsx) on every step except the home page.
+Let applicants pick the programs they want (SNAP, cash assistance, Medicaid, child care) and fill the right form for
+each. The backend is already built for this: `POST /api/forms` takes a list of benefits, and the extraction schema
+covers both forms.
 
-[CLAUDE.md](CLAUDE.md) has the detailed architecture notes, open cross-team issues and post-MVP ideas.
+1. **Choice screen:** add a step where the applicant ticks the programs they want, saved in `applicant`.
+2. **Questions per program:** tag each question in QuestionBank.json with the programs that need it, and ask only
+   the questions for the chosen programs.
+3. **Eligibility per program:** add a rules module for each new program next to the SNAP rules, returning one result
+   per program.
+4. **LDSS-2921 form:** rename the blank form's fields (they still have Acrobat's default names) using the same
+   naming scheme as the LDSS-4826, then add it to the form filler and the checklist.
+5. **Tests:** add a complete-applicant scenario for each program.
 
-## Dev tools
+### 2. Accounts: sign in and come back to an application
 
-[backend/scripts/check_extraction_coverage.py](backend/scripts/check_extraction_coverage.py) runs sample documents
-through the real Gemini pipeline and reports which schema fields came back filled. It makes real API calls, so it
-uses quota.
+Let people save their progress, sign in later and pick up where they left off. This means storing very sensitive
+data, so encryption comes first.
 
-```bash
-python backend/scripts/check_extraction_coverage.py backend/scripts/sample_docs/*
-```
+1. **Database and sign-in:** a database for accounts and saved applications, with sign-in by email link or a
+   one-time code (no passwords to forget).
+2. **Encryption layer:** encrypt each saved application before it's written, with a separate key per user held in a
+   key management service, so the database alone never reveals anything. Use HTTPS everywhere.
+3. **Save and resume:** save the `applicant` object as the user goes, and load it again after sign-in, so they
+   return to the same question.
+4. **Uploaded files:** keep only the information read from documents, not the files themselves, unless the user
+   chooses to keep them.
+5. **Control and deletion:** a "Delete my account" that removes everything, automatic deletion of inactive
+   applications, and updated consent text explaining what is now stored and for how long.
+6. **Keep "no account" mode:** people who don't want an account can still use the app as it works today.
 
-See [Running the tests](#running-the-tests).
+### 3. The app in other languages
 
-## Next up
+Many SNAP applicants in New York are more comfortable in Spanish, Chinese, Russian, Haitian Creole, Bengali, Korean
+or another language.
 
-- **Open cross-team issue:** refugees and asylees are currently screened as ineligible (see CLAUDE.md)
-- **After the MVP:** see "Post-MVP improvement ideas" in CLAUDE.md (early "not eligible", saving skipped questions,
-  merging duplicate people, reviewing what documents filled in, drag-and-drop uploads)
+1. **Translatable text:** move every screen's text into translation files with a library like react-i18next, and
+   add a language picker on the home page.
+2. **Translate the questions:** add translations of each question, explanation and option in QuestionBank.json.
+   Answers stay stored the same way, so eligibility and form filling don't change.
+3. **Documents in any language:** test Gemini on documents in other languages and translate its issue messages.
+4. **Forms and letters:** fill the official form in the applicant's language where the state publishes one,
+   translate the checklist PDF, and use the existing "letters in Spanish" option on the form.
+5. **Review:** have native speakers check the translations, since a wrong word in a benefits question can lead to
+   a wrong answer.
