@@ -1,8 +1,9 @@
 import { useContext, useEffect, useState } from "react";
-import { BridgeContext } from "../context/BridgeContext.jsx";
-import { checkEligibility } from "../utils/api.js";
-import { DOCUMENT_TYPES } from "../data/documentTypes.js";
-import { answerAll, planFix } from "../utils/fixPlan.js";
+import { BridgeContext } from "../../context/BridgeContext.jsx";
+import { checkEligibility } from "../../utils/api.js";
+import { DOCUMENT_TYPES } from "../../data/documentTypes.js";
+import { answerAll, planFix } from "../../utils/fixPlan.js";
+import "./ResultsScreen.css";
 
 const STATUS_TITLES = {
     eligible: "Your household appears to qualify",
@@ -48,7 +49,8 @@ export default function ResultsScreen({ goNext, goBack, onFix }) {
 
     if (status === "loading") {
         return (
-            <div>
+            <div className="results-loading" role="status">
+                <span className="spinner" aria-hidden="true" />
                 <h1>Checking your answers...</h1>
             </div>
         );
@@ -58,9 +60,11 @@ export default function ResultsScreen({ goNext, goBack, onFix }) {
         return (
             <div>
                 <h1>We couldn't check your eligibility</h1>
-                <p>{error}</p>
-                <button onClick={() => setAttempt((n) => n + 1)}>Try again</button>
-                <button onClick={goBack}>Back to questions</button>
+                <p className="error">{error}</p>
+                <div className="actions">
+                    <button className="btn-primary" onClick={() => setAttempt((n) => n + 1)}>Try again</button>
+                    <button onClick={goBack}>Back to questions</button>
+                </div>
             </div>
         );
     }
@@ -70,21 +74,23 @@ export default function ResultsScreen({ goNext, goBack, onFix }) {
     const fixAllAnswers = answerAll(plans.map((p) => p.plan));
 
     return (
-        <div>
+        <div className="results">
             {results.map((result) => (
-                <section key={result.benefit}>
+                <section key={result.benefit} className={`status-card status-${result.status}`}>
                     <h1>{result.benefit}: {STATUS_TITLES[result.status] ?? result.status}</h1>
                     <p>{result.reason}</p>
 
                     {result.missing.length > 0 && (
-                        <ul>
+                        <ul className="missing-list">
                             {result.missing.map((m) => {
                                 const plan = planFix(applicant, m);
                                 return (
-                                    <li key={`${m.type}:${m.item}:${m.memberIndex}`}>
-                                        {plan.text}{" "}
-                                        {plan.answer && <button onClick={() => onFix(plan.answer)}>Answer</button>}
-                                        {plan.upload && <button onClick={() => onFix(plan.upload)}>{uploadLabel(plan.upload)}</button>}
+                                    <li key={`${m.type}:${m.item}:${m.memberIndex}`} className="missing-row">
+                                        <span className="missing-text">{plan.text}</span>{" "}
+                                        <span className="missing-actions">
+                                            {plan.answer && <button className="btn-small" onClick={() => onFix(plan.answer)}>Answer</button>}
+                                            {plan.upload && <button className="btn-small" onClick={() => onFix(plan.upload)}>{uploadLabel(plan.upload)}</button>}
+                                        </span>
                                     </li>
                                 );
                             })}
@@ -92,7 +98,7 @@ export default function ResultsScreen({ goNext, goBack, onFix }) {
                     )}
 
                     {result.status === "not_eligible" && (
-                        <p>
+                        <p className="notice">
                             This is only an estimate. You still have the right to apply, and your local office
                             makes the final decision.
                         </p>
@@ -100,17 +106,19 @@ export default function ResultsScreen({ goNext, goBack, onFix }) {
                 </section>
             ))}
 
-            <p>
+            <p className="notice">
                 This is a screening, not a decision. Your local social services office decides after your
                 application and interview.
             </p>
 
-            {fixAllAnswers && fixAllAnswers.items.length > 1 && (
-                <button onClick={() => onFix(fixAllAnswers)}>Answer all of these</button>
-            )}
-            {needsSomething && <button onClick={goBack}>Go through all the questions</button>}
-            <button onClick={() => setAttempt((n) => n + 1)}>Check again</button>
-            <button onClick={goNext}>Continue to my application forms</button>
+            <div className="actions">
+                {fixAllAnswers && fixAllAnswers.items.length > 1 && (
+                    <button className="btn-primary" onClick={() => onFix(fixAllAnswers)}>Answer all of these</button>
+                )}
+                <button className={needsSomething ? undefined : "btn-primary"} onClick={goNext}>Continue to my application forms</button>
+                {needsSomething && <button onClick={goBack}>Go through all the questions</button>}
+                <button className="btn-link" onClick={() => setAttempt((n) => n + 1)}>Check again</button>
+            </div>
         </div>
     );
 }

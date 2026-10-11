@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from "react";
-import { BridgeContext } from "../context/BridgeContext.jsx";
-import { createForms } from "../utils/api.js";
+import { BridgeContext } from "../../context/BridgeContext.jsx";
+import { createForms } from "../../utils/api.js";
+import "./FormsScreen.css";
 
 const STATUS_TEXT = {
     eligible: "appears to qualify",
@@ -50,11 +51,11 @@ export default function FormsScreen({ goBack, onDeleted }) {
     }
 
     return (
-        <div>
+        <div className="forms">
             <h1>Your application</h1>
 
             {results.map((r) => (
-                <p key={r.benefit}>
+                <p key={r.benefit} className={`forms-status status-${r.status}`}>
                     {r.benefit}: your household {STATUS_TEXT[r.status] ?? r.status}.
                 </p>
             ))}
@@ -65,16 +66,25 @@ export default function FormsScreen({ goBack, onDeleted }) {
                         We'll fill out the official New York State SNAP application (LDSS-4826) with your answers and
                         the information from your documents.
                     </p>
-                    <button onClick={handleCreate}>Create my application</button>
+                    <div className="actions">
+                        <button className="btn-primary" onClick={handleCreate}>Create my application</button>
+                    </div>
                 </>
             )}
 
-            {status === "loading" && <p>Preparing your form...</p>}
+            {status === "loading" && (
+                <p className="forms-loading" role="status">
+                    <span className="spinner" aria-hidden="true" />
+                    Preparing your form...
+                </p>
+            )}
 
             {status === "error" && (
                 <>
-                    <p>{error}</p>
-                    <button onClick={handleCreate}>Try again</button>
+                    <p className="error">{error}</p>
+                    <div className="actions">
+                        <button className="btn-primary" onClick={handleCreate}>Try again</button>
+                    </div>
                 </>
             )}
 
@@ -82,12 +92,12 @@ export default function FormsScreen({ goBack, onDeleted }) {
                 <>
                     {downloads.map((d) => (
                         <p key={d.name}>
-                            <a href={d.url} download={`${d.name}.pdf`}>Download {d.name} (PDF)</a>
+                            <a className="link-button" href={d.url} download={`${d.name}.pdf`}>Download {d.name} (PDF)</a>
                         </p>
                     ))}
 
                     <h2>What to do next</h2>
-                    <ol>
+                    <ol className="steps">
                         <li>Open the form and check that everything is right. You can fix anything by hand.</li>
                         <li>Sign and date it on page 8. We leave the signature for you.</li>
                         <li>
@@ -99,17 +109,21 @@ export default function FormsScreen({ goBack, onDeleted }) {
                             you what proof they need.
                         </li>
                     </ol>
-                    <p>BridgePath does not submit anything for you.</p>
+                    <p className="notice">BridgePath does not submit anything for you.</p>
                 </>
             )}
 
-            <h2>Your information</h2>
-            <p>
-                Everything you entered stays only in this browser tab and is gone when you close it. Download your
-                form first, then you can delete it now.
-            </p>
-            <button onClick={handleDelete}>Delete my information and start over</button>
-            <button onClick={goBack}>Back to my results</button>
+            <div className="section">
+                <h2>Your information</h2>
+                <p>
+                    Everything you entered stays only in this browser tab and is gone when you close it. Download your
+                    form first, then you can delete it now.
+                </p>
+                <button className="btn-danger" onClick={handleDelete}>Delete my information and start over</button>
+            </div>
+            <div className="actions">
+                <button className="btn-link" onClick={goBack}>Back to my results</button>
+            </div>
         </div>
     );
 }

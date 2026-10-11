@@ -140,7 +140,15 @@ app/services/analytics.py (telemetry)              BridgePathExtractionPayload (
 
 `frontend/src/App.jsx` is a tiny step machine (`useState("home")`) that renders one screen per step:
 `home` → `HomeScreen`, `consent` → `ConsentScreen`, `upload` → `IntakeUpload`, `roster` → `RosterScreen`, `questions` → `QuestionScreen`,
-`results` → `ResultsScreen`, `forms` → `FormsScreen` (the whole flow is implemented; screens are unstyled). `main.jsx` wraps `<App />` in `BridgeProvider`.
+`results` → `ResultsScreen`, `forms` → `FormsScreen` (the whole flow is implemented). `main.jsx` wraps `<App />` in `BridgeProvider`.
+App renders a header (logo + progress bar over `PROGRESS_STEPS`) on every step except `home`, and wraps each screen
+in `<main className="container">`.
+
+**Styling:** plain CSS only (no UI libraries), desktop web layout with no mobile breakpoints. `src/index.css` holds
+the `:root` theme variables (every color must come from one; no hard-coded colors elsewhere) and the shared classes
+(`.actions`, `.btn-primary` / `.btn-link` / `.btn-small` / `.btn-danger`, `.options` choice buttons, `.helper`,
+`.eyebrow`, `.notice`, `.error`, `.section`, `.spinner`). Each screen has its own folder
+(`src/screens/<Name>/<Name>.jsx` + `<Name>.css`), and the screen imports its CSS.
 
 **Fixing loop:** ResultsScreen's "Answer"/"Upload" buttons call `onFix(fix)`; App's `startFixing` stores it in
 context `fixing` and switches to `questions` (`fix.type === "question"`) or `upload` (`"document"`). Those screens'
@@ -180,12 +188,12 @@ memberId?, proof?, replace?, reason?}`.
   non-applicant — no one else on the document is added, and incomes with no name match link to that member.
   `replaceTypedIncomes(applicant, uploadId, memberId)` removes that member's user-typed income rows of the same
   `income_type` once a proof upload added one, so income isn't counted twice.
-- **`src/screens/HomeScreen.jsx`** — landing page: logo, what BridgePath does, and an "I'm ready to apply" button
+- **`src/screens/HomeScreen/HomeScreen.jsx`** — landing page: logo, what BridgePath does, and an "I'm ready to apply" button
   that goes to consent.
-- **`src/screens/ConsentScreen.jsx`** — static consent/disclosure screen, one heading per topic (what we collect, why,
+- **`src/screens/ConsentScreen/ConsentScreen.jsx`** — static consent/disclosure screen, one heading per topic (what we collect, why,
   who else sees it (Gemini, Google voice), how long we keep it, what this app isn't). Gates "Continue" on a single
   checkbox; "Back" returns home.
-- **`src/screens/intakeUpload.jsx`** — working. **Upload files** opens a multi-select picker (`pickFiles`); **Take
+- **`src/screens/intakeUpload/intakeUpload.jsx`** — working. **Upload files** opens a multi-select picker (`pickFiles`); **Take
   photo** takes one picture (`pickFile(true)`). Selected files are read **one after another** (`readFile`: one
   `api.extract` call each, so no burst of Gemini requests), with "Reading document 2 of 5: name..." progress; a file
   that fails (wrong type/size from the picker, unrecognized type, or an extract error) is listed in a "files weren't
@@ -196,25 +204,25 @@ memberId?, proof?, replace?, reason?}`.
   as `targetMemberId`, and for `fixing.proof` calls `replaceTypedIncomes`; its button reads "Back to my results".
   `documents` holds `{id, type, status, issues}` per upload. Error messages are `api.js`'s (e.g. "Can't reach server"
   or the backend's "Couldn't read this file, try again."). Continue goes to the roster.
-- **`src/screens/RosterScreen.jsx`** — lists `household_members` (with "Found on your <document>" for people from
+- **`src/screens/RosterScreen/RosterScreen.jsx`** — lists `household_members` (with "Found on your <document>" for people from
   uploads), lets the applicant remove anyone except themselves (`removePerson` also clears every `member_id` / "who"
   reference to them) and add people by name; Continue marks everyone `roster_confirmed`. No merge-duplicates UI yet
   (remove one copy instead).
-- **`src/screens/QuestionScreen.jsx`** — paged: every applicable item from `listItems` (answered or not) is a
+- **`src/screens/QuestionScreen/QuestionScreen.jsx`** — paged: every applicable item from `listItems` (answered or not) is a
   numbered page, with a bottom `Pagination` bar (`« 1 … 33 [34] 35 … 92 End »`, ✓ = answered) to jump to any page,
   including answered ones to review/change. Back = previous page. After an answer or "Skip for now" it moves to the
   next unanswered page (`pickPage`, wrapping to earlier ones); the End page lists how many are still unanswered and
   has "See my results". Pages renumber as answers add/remove follow-ups. Local state only: `skipped`, `doneAdding`,
   `view`. In fixing mode (`fixing.type === "question"`) the pages are only `fixing.items` plus follow-ups that appear
   while answering them (`fixingPages`: items not present when the screen opened), and the end page says "Check my
-  results again". Unstyled, like the other screens.
-- **`src/screens/ResultsScreen.jsx`** — every time it opens (and on "Check again" / "Try again") it calls
+  results again".
+- **`src/screens/ResultsScreen/ResultsScreen.jsx`** — every time it opens (and on "Check again" / "Try again") it calls
   `api.checkEligibility(applicant)`, stores `response.results` in context `results`, and shows each benefit's status
   title + backend `reason` and an estimate/right-to-apply disclaimer. Each `missing` item is run through
   `fixPlan.planFix` and shown as readable text with an **Answer** button (question pages that fill it) and/or an
   **Upload …** button (document types that can supply it); "Answer all of these" combines every answerable item.
   "Go through all the questions" returns to the full question screen.
-- **`src/screens/FormsScreen.jsx`** — last step. Shows each benefit's status from context `results` (no re-check),
+- **`src/screens/FormsScreen/FormsScreen.jsx`** — last step. Shows each benefit's status from context `results` (no re-check),
   "Create my application" → `api.createForms(applicant, benefits)` (benefits from `results`, default `["SNAP"]`; the
   form is offered even after `not_eligible` — right to apply), turns each returned base64 PDF into a Blob URL
   download link (`LDSS-4826.pdf`, revoked on unmount), stores form names in context `forms`, lists next steps (sign

@@ -1,10 +1,11 @@
 import { useContext, useState } from "react";
-import { BridgeContext } from "../context/BridgeContext.jsx";
-import { addRow, applyAnswer } from "../utils/applicantEdits.js";
+import { BridgeContext } from "../../context/BridgeContext.jsx";
+import { addRow, applyAnswer } from "../../utils/applicantEdits.js";
 import {
     QUESTION_BANK, SECTION_LABELS, checklistItems, findMember, findRow, fixingPages, getIn, itemKey, listItems,
     memberLabel, pickPage, questionText, splitPath, whoFlagMembers,
-} from "../utils/questionQueue.js";
+} from "../../utils/questionQueue.js";
+import "./QuestionScreen.css";
 
 const ADD_ANOTHER_TEXT = {
     hasIncome: "Does anyone in your household get any other income?",
@@ -76,36 +77,40 @@ export default function QuestionScreen({ goNext }) {
         const firstUnanswered = items.findIndex((i) => !i.answered);
         if (isFixing) {
             return (
-                <div>
+                <div className="questions">
                     <h1>{unanswered === 0 ? "Thanks, that's what we needed" : "You're at the end"}</h1>
-                    {unanswered > 0 && <p>{unanswered} still unanswered.</p>}
-                    {unanswered > 0 && <button onClick={() => goToPage(firstUnanswered)}>Go to first unanswered</button>}
-                    <button disabled={items.length === 0} onClick={() => goToPage(items.length - 1)}>Back</button>
-                    <button onClick={goNext}>Check my results again</button>
+                    {unanswered > 0 && <p className="helper">{unanswered} still unanswered.</p>}
+                    <div className="actions">
+                        <button className="btn-primary" onClick={goNext}>Check my results again</button>
+                        {unanswered > 0 && <button onClick={() => goToPage(firstUnanswered)}>Go to first unanswered</button>}
+                        <button className="btn-link" disabled={items.length === 0} onClick={() => goToPage(items.length - 1)}>Back</button>
+                    </div>
                     {pager}
                 </div>
             );
         }
         return (
-            <div>
+            <div className="questions">
                 <h1>{unanswered === 0 ? "That's everything" : "You're at the end"}</h1>
                 {unanswered > 0 && (
-                    <p>
+                    <p className="helper">
                         {unanswered} question{unanswered === 1 ? " is" : "s are"} still unanswered. You can see
                         your results now, but we may need those answers to check your eligibility.
                     </p>
                 )}
-                {unanswered > 0 && <button onClick={() => goToPage(firstUnanswered)}>Go to first unanswered</button>}
-                <button disabled={items.length === 0} onClick={() => goToPage(items.length - 1)}>Back</button>
-                <button onClick={goNext}>See my results</button>
+                <div className="actions">
+                    <button className="btn-primary" onClick={goNext}>See my results</button>
+                    {unanswered > 0 && <button onClick={() => goToPage(firstUnanswered)}>Go to first unanswered</button>}
+                    <button className="btn-link" disabled={items.length === 0} onClick={() => goToPage(items.length - 1)}>Back</button>
+                </div>
                 {pager}
             </div>
         );
     }
 
     return (
-        <div>
-            <p>
+        <div className="questions">
+            <p className="eyebrow">
                 Question {pageIndex + 1} of {items.length} · {SECTION_LABELS[current.section]} · {unanswered} left
             </p>
             <Question
@@ -115,7 +120,7 @@ export default function QuestionScreen({ goNext }) {
                 onAnswer={(value) => handleAnswer(current, value)}
                 onSkip={() => handleSkip(current)}
             />
-            <button disabled={pageIndex === 0} onClick={() => goToPage(pageIndex - 1)}>Back</button>
+            <button className="btn-link btn-back" disabled={pageIndex === 0} onClick={() => goToPage(pageIndex - 1)}>Back</button>
             {pager}
         </div>
     );
@@ -129,9 +134,9 @@ function Pagination({ items, current, onGo }) {
 
     const buttons = [];
     shown.forEach((p, i) => {
-        if (i > 0 && p - shown[i - 1] > 1) buttons.push(<span key={`gap${p}`}> … </span>);
+        if (i > 0 && p - shown[i - 1] > 1) buttons.push(<span key={`gap${p}`} className="pager-gap"> … </span>);
         buttons.push(
-            <button key={p} onClick={() => onGo(p)} disabled={p === current} aria-current={p === current ? "page" : undefined}>
+            <button key={p} className={items[p].answered ? "answered" : undefined} onClick={() => onGo(p)} disabled={p === current} aria-current={p === current ? "page" : undefined}>
                 {p === current ? `[${p + 1}]` : p + 1}
                 {items[p].answered && " ✓"}
             </button>
@@ -139,7 +144,7 @@ function Pagination({ items, current, onGo }) {
     });
 
     return (
-        <nav aria-label="Question pages">
+        <nav className="pager" aria-label="Question pages">
             <button onClick={() => onGo(current - 1)} disabled={current === 0}>«</button>
             {buttons}
             <button onClick={() => onGo(last)} disabled={current === last} aria-current={current === last ? "page" : undefined}>
@@ -210,10 +215,10 @@ function Question({ item, applicant, onAnswer, onSkip }) {
 
     return (
         <div>
-            {subject && <p>{subject}</p>}
+            {subject && <p className="subject">{subject}</p>}
             <h1>{questionText(entry, member)}</h1>
-            {entry.explanation && <p>{entry.explanation}</p>}
-            {entry.example && <p>Example: {entry.example}</p>}
+            {entry.explanation && <p className="helper">{entry.explanation}</p>}
+            {entry.example && <p className="helper">Example: {entry.example}</p>}
 
             <AnswerInput
                 entry={entry}
@@ -224,17 +229,19 @@ function Question({ item, applicant, onAnswer, onSkip }) {
                 onAnswer={onAnswer}
             />
 
-            {entry.skipValue !== undefined && (
-                <button onClick={() => onAnswer(entry.skipValue)}>{entry.skipLabel}</button>
-            )}
-            <button onClick={onSkip}>Skip for now</button>
+            <div className="skip-actions">
+                {entry.skipValue !== undefined && (
+                    <button onClick={() => onAnswer(entry.skipValue)}>{entry.skipLabel}</button>
+                )}
+                <button className="btn-link" onClick={onSkip}>Skip for now</button>
+            </div>
         </div>
     );
 }
 
 function YesNo({ onAnswer }) {
     return (
-        <div>
+        <div className="options">
             <button onClick={() => onAnswer(true)}>Yes</button>
             <button onClick={() => onAnswer(false)}>No</button>
         </div>
@@ -246,7 +253,7 @@ function MemberChecklist({ members, chosen, setChosen }) {
         setChosen((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
     }
     return (
-        <div>
+        <div className="choice-list">
             {members.map((m) => (
                 <label key={m.id}>
                     <input type="checkbox" checked={chosen.includes(m.id)} onChange={() => toggle(m.id)} />
@@ -270,7 +277,7 @@ function Checklist({ entry, applicant, member, initial, onAnswer }) {
     const missingWho = lines.some((l) => l.who && checked.includes(l.path) && !(who[l.path] || []).length);
 
     return (
-        <div>
+        <div className="answer">
             {lines.map((line) => (
                 <div key={line.path}>
                     <label>
@@ -278,7 +285,7 @@ function Checklist({ entry, applicant, member, initial, onAnswer }) {
                         {line.label}
                     </label>
                     {line.who && checked.includes(line.path) && (
-                        <div>
+                        <div className="who">
                             <p>Who?</p>
                             <MemberChecklist
                                 members={applicant.household_members}
@@ -292,10 +299,12 @@ function Checklist({ entry, applicant, member, initial, onAnswer }) {
                     )}
                 </div>
             ))}
-            <button disabled={checked.length === 0 || missingWho} onClick={() => onAnswer({ checked, who })}>
-                Continue
-            </button>
-            <button onClick={() => onAnswer({ checked: [], who: {} })}>{entry.noneLabel ?? "None of these"}</button>
+            <div className="actions">
+                <button className="btn-primary" disabled={checked.length === 0 || missingWho} onClick={() => onAnswer({ checked, who })}>
+                    Continue
+                </button>
+                <button onClick={() => onAnswer({ checked: [], who: {} })}>{entry.noneLabel ?? "None of these"}</button>
+            </div>
         </div>
     );
 }
@@ -324,25 +333,25 @@ function SingleInput({ entry, options, applicant, initial, onAnswer }) {
 
         case "select":
             return (
-                <div>
+                <div className="options">
                     {options.map((o) => (
-                        <button key={o.value} onClick={() => onAnswer(o.value)}>{o.label}</button>
+                        <button key={o.value} className={initial === o.value ? "selected" : undefined} onClick={() => onAnswer(o.value)}>{o.label}</button>
                     ))}
                 </div>
             );
 
         case "member":
             return (
-                <div>
+                <div className="options">
                     {members.map((m) => (
-                        <button key={m.id} onClick={() => onAnswer(m.id)}>{memberLabel(m)}</button>
+                        <button key={m.id} className={initial === m.id ? "selected" : undefined} onClick={() => onAnswer(m.id)}>{memberLabel(m)}</button>
                     ))}
                 </div>
             );
 
         case "multiselect":
             return (
-                <div>
+                <div className="answer">
                     {options.map((o) => (
                         <label key={o.value}>
                             <input
@@ -355,23 +364,23 @@ function SingleInput({ entry, options, applicant, initial, onAnswer }) {
                             {o.label}
                         </label>
                     ))}
-                    <button disabled={chosen.length === 0} onClick={() => onAnswer(chosen)}>Continue</button>
+                    <button className="btn-primary" disabled={chosen.length === 0} onClick={() => onAnswer(chosen)}>Continue</button>
                 </div>
             );
 
         case "members":
             return (
-                <div>
+                <div className="answer">
                     <MemberChecklist members={members} chosen={chosen} setChosen={setChosen} />
-                    <button disabled={chosen.length === 0} onClick={() => onAnswer(chosen)}>Continue</button>
+                    <button className="btn-primary" disabled={chosen.length === 0} onClick={() => onAnswer(chosen)}>Continue</button>
                 </div>
             );
 
         case "whoFlag":
             return (
-                <div>
+                <div className="answer">
                     <MemberChecklist members={whoFlagMembers(applicant, entry)} chosen={chosen} setChosen={setChosen} />
-                    <button disabled={chosen.length === 0} onClick={() => onAnswer(chosen)}>Continue</button>
+                    <button className="btn-primary" disabled={chosen.length === 0} onClick={() => onAnswer(chosen)}>Continue</button>
                     <button onClick={() => onAnswer([])}>No one</button>
                 </div>
             );
@@ -379,17 +388,17 @@ function SingleInput({ entry, options, applicant, initial, onAnswer }) {
         case "who":
             if (!whoYes) {
                 return (
-                    <div>
+                    <div className="options">
                         <button onClick={() => setWhoYes(true)}>Yes</button>
                         <button onClick={() => onAnswer({ answer: false, who: [] })}>No</button>
                     </div>
                 );
             }
             return (
-                <div>
+                <div className="answer">
                     <p>Who?</p>
                     <MemberChecklist members={members} chosen={chosen} setChosen={setChosen} />
-                    <button disabled={chosen.length === 0} onClick={() => onAnswer({ answer: true, who: chosen })}>
+                    <button className="btn-primary" disabled={chosen.length === 0} onClick={() => onAnswer({ answer: true, who: chosen })}>
                         Continue
                     </button>
                 </div>
@@ -397,10 +406,11 @@ function SingleInput({ entry, options, applicant, initial, onAnswer }) {
 
         case "list":
             return (
-                <div>
-                    <p>One per line</p>
+                <div className="answer">
+                    <p className="helper">One per line</p>
                     <textarea value={text} onChange={(e) => setText(e.target.value)} />
                     <button
+                        className="btn-primary"
                         disabled={!text.trim()}
                         onClick={() => onAnswer(text.split("\n").map((s) => s.trim()).filter(Boolean))}
                     >
@@ -414,10 +424,10 @@ function SingleInput({ entry, options, applicant, initial, onAnswer }) {
             const n = Number(text.replace(/[$,\s]/g, ""));
             const valid = text.trim() !== "" && Number.isFinite(n) && n >= 0;
             return (
-                <div>
+                <div className="answer">
                     {entry.input === "money" && "$"}
                     <input inputMode="decimal" value={text} onChange={(e) => setText(e.target.value)} />
-                    <button disabled={!valid} onClick={() => onAnswer(n)}>Continue</button>
+                    <button className="btn-primary" disabled={!valid} onClick={() => onAnswer(n)}>Continue</button>
                 </div>
             );
         }
@@ -426,11 +436,11 @@ function SingleInput({ entry, options, applicant, initial, onAnswer }) {
             // text, longtext, date, phone, ssn, address
             const type = entry.input === "date" ? "date" : entry.input === "phone" ? "tel" : "text";
             return (
-                <div>
+                <div className="answer">
                     {entry.input === "longtext" || entry.input === "address"
                         ? <textarea value={text} onChange={(e) => setText(e.target.value)} />
                         : <input type={type} value={text} onChange={(e) => setText(e.target.value)} />}
-                    <button disabled={!text.trim()} onClick={() => onAnswer(text.trim())}>Continue</button>
+                    <button className="btn-primary" disabled={!text.trim()} onClick={() => onAnswer(text.trim())}>Continue</button>
                 </div>
             );
         }

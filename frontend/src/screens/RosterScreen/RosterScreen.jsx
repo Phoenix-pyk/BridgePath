@@ -1,8 +1,9 @@
 import { useContext, useState } from "react";
-import { BridgeContext } from "../context/BridgeContext.jsx";
-import { DOCUMENT_TYPES } from "../data/documentTypes.js";
-import { addPerson, confirmRoster, removePerson } from "../utils/applicantEdits.js";
-import { memberLabel } from "../utils/questionQueue.js";
+import { BridgeContext } from "../../context/BridgeContext.jsx";
+import { DOCUMENT_TYPES } from "../../data/documentTypes.js";
+import { addPerson, confirmRoster, removePerson } from "../../utils/applicantEdits.js";
+import { memberLabel } from "../../utils/questionQueue.js";
+import "./RosterScreen.css";
 
 // Who lives with the applicant. People found in documents are listed for the
 // applicant to keep or remove (e.g. a duplicate, or a roommate who moved out);
@@ -34,22 +35,24 @@ export default function RosterScreen({ goNext }) {
     }
 
     return (
-        <div>
+        <div className="roster">
             <h1>Who lives with you?</h1>
-            <p>
+            <p className="helper">
                 List everyone who lives with you, even if they are not applying. If someone is listed twice,
                 or doesn't live with you, remove them.
             </p>
 
-            <ul>
+            <ul className="person-list">
                 {applicant.household_members.map((member) => (
-                    <li key={member.id}>
-                        {memberLabel(member)}
-                        {sourceLabel(member) && <> ({sourceLabel(member)})</>}
+                    <li key={member.id} className="person-row">
+                        <span className="person-name">
+                            {memberLabel(member)}
+                            {sourceLabel(member) && <span className="person-source"> ({sourceLabel(member)})</span>}
+                        </span>
                         {member.is_applicant.value !== true && (
                             <>
                                 {" "}
-                                <button onClick={() => setApplicant((prev) => removePerson(prev, member.id))}>
+                                <button className="btn-small" onClick={() => setApplicant((prev) => removePerson(prev, member.id))}>
                                     Remove
                                 </button>
                             </>
@@ -58,7 +61,7 @@ export default function RosterScreen({ goNext }) {
                 ))}
             </ul>
 
-            <form onSubmit={handleAdd}>
+            <form className="section add-person" onSubmit={handleAdd}>
                 <h2>Add someone</h2>
                 <label>
                     First name
@@ -73,7 +76,9 @@ export default function RosterScreen({ goNext }) {
                 </button>
             </form>
 
-            <button onClick={handleContinue}>Continue</button>
+            <div className="actions">
+                <button className="btn-primary" onClick={handleContinue}>Continue</button>
+            </div>
         </div>
     );
 }

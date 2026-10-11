@@ -41,11 +41,12 @@ test("Forms: download the filled LDSS-4826, then delete my information", async (
     expect(pdf.includes("Leo")).toBe(true);
 
     await page.getByRole("button", { name: "Delete my information and start over" }).click();
-    await expect(page.getByRole("checkbox")).not.toBeChecked();
-    await expect(page.getByText("I Understand and agree")).toBeVisible();
+    await expect(page.getByRole("button", { name: "I'm ready to apply" })).toBeVisible();
     await snap(page, "After delete: back to the start, nothing kept");
 
-    // Starting again really starts empty: the roster only has "You"
+    // Starting again really starts empty: consent isn't remembered, the roster only has "You"
+    await page.getByRole("button", { name: "I'm ready to apply" }).click();
+    await expect(page.getByRole("checkbox")).not.toBeChecked();
     await page.getByRole("checkbox").check();
     await page.getByRole("button", { name: "Continue" }).click();
     await page.getByRole("button", { name: "Continue" }).click();

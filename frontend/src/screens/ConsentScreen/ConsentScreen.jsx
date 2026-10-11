@@ -1,4 +1,5 @@
 import { useState } from "react";
+import "./ConsentScreen.css";
 
 const consentSections = [
     {
@@ -28,12 +29,15 @@ export default function ConsentScreen({ goNext, goBack }) {
     return (
         <div>
             <h1>Before We Start</h1>
-            {consentSections.map((section) => (
-                <section key={section.title}>
-                    <h2>{section.title}</h2>
-                    <p>{section.text}</p>
-                </section>
-            ))}
+            <p className="helper">Here's how we handle your information. Please read it before you begin.</p>
+            <ul className="consent-list">
+                {consentSections.map((section) => (
+                    <li key={section.title}>
+                        <h2>{section.title}</h2>
+                        <p>{section.text}</p>
+                    </li>
+                ))}
+            </ul>
 
             <label>
                 <input
@@ -44,10 +48,12 @@ export default function ConsentScreen({ goNext, goBack }) {
                 I understand and agree
             </label>
 
-            <button onClick={goBack}>Back</button>
-            <button disabled={!agreed} onClick={goNext}>
-                Continue
-            </button>
+            <div className="actions">
+                <button className="btn-primary" disabled={!agreed} onClick={goNext}>
+                    Continue
+                </button>
+                <button className="btn-link" onClick={goBack}>Back</button>
+            </div>
         </div>
     );
 }

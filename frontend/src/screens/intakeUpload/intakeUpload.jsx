@@ -1,10 +1,11 @@
 import { useContext, useState } from "react";
-import { BridgeContext } from "../context/BridgeContext.jsx";
-import { CATEGORIES, DOCUMENT_TYPES } from "../data/documentTypes.js";
-import { pickFile, pickFiles } from "../utils/documentScanner.js";
-import { extract } from "../utils/api.js";
-import { mergeExtraction, removeUploads, replaceTypedIncomes } from "../utils/mergeExtraction.js";
-import { findMember, memberLabel } from "../utils/questionQueue.js";
+import { BridgeContext } from "../../context/BridgeContext.jsx";
+import { CATEGORIES, DOCUMENT_TYPES } from "../../data/documentTypes.js";
+import { pickFile, pickFiles } from "../../utils/documentScanner.js";
+import { extract } from "../../utils/api.js";
+import { mergeExtraction, removeUploads, replaceTypedIncomes } from "../../utils/mergeExtraction.js";
+import { findMember, memberLabel } from "../../utils/questionQueue.js";
+import "./intakeUpload.css";
 
 // Fixing mode (fixing.type === "document", from the results screen):
 //   fixing = { type: "document", items: [documentTypes], reason?, memberId?, proof?, replace? }
@@ -119,12 +120,40 @@ export default function IntakeUpload({ goNext }) {
     }
 
     return (
-        <div>
+        <div className="upload">
             <h1>{isFixing ? "Upload a document" : "Upload your documents"}</h1>
-            {isFixing && fixing.reason && <p>{fixing.reason}</p>}
-            {fixingFor && <p>This is for {memberLabel(fixingFor)}.</p>}
+            {isFixing && fixing.reason && <p className="helper">{fixing.reason}</p>}
+            {fixingFor && <p className="helper">This is for {memberLabel(fixingFor)}.</p>}
             {!isFixing && (
-                <p>Upload any of these that you have. The more you upload, the fewer questions we'll ask.</p>
+                <p className="helper">Upload any of these that you have. The more you upload, the fewer questions we'll ask.</p>
+            )}
+
+            <div className="upload-area">
+                <button className="btn-primary" disabled={uploading} onClick={() => handleUpload(false)}>
+                    Upload files
+                </button>
+                <button disabled={uploading} onClick={() => handleUpload(true)}>
+                    Take photo
+                </button>
+                <p className="helper">You can select several files at once.</p>
+            </div>
+
+            {progress && (
+                <p className="upload-progress" role="status">
+                    <span className="spinner" aria-hidden="true" />
+                    Reading document {progress.index} of {progress.total}: {progress.name}...
+                </p>
+            )}
+            {!uploading && readCount > 1 && <p className="upload-read">{readCount} documents read ✓</p>}
+            {!uploading && problems.length > 0 && (
+                <div className="error">
+                    <p>{problems.length === 1 ? "One file wasn't added:" : `${problems.length} files weren't added:`}</p>
+                    <ul>
+                        {problems.map((p, i) => (
+                            <li key={`${p.name}-${i}`}>{p.name}: {p.message}</li>
+                        ))}
+                    </ul>
+                </div>
             )}
 
             {CATEGORIES.map((category) => {
@@ -133,19 +162,22 @@ export default function IntakeUpload({ goNext }) {
                 return (
                     <section key={category}>
                         <h2>{category}</h2>
-                        <ul>
+                        <ul className="doc-list">
                             {items.map((item) => {
                                 const uploads = documents.filter((d) => d.type === item);
                                 const issues = [...new Set(uploads.flatMap((d) => d.issues))];
                                 return (
-                                    <li key={item}>
-                                        {DOCUMENT_TYPES[item].label}
-                                        {uploads.length > 1 && ` (${uploads.length})`}
-                                        {uploads.length > 0 && issues.length === 0 && " ✓"}
+                                    <li key={item} className="doc-row">
+                                        <span className="doc-name">
+                                            {DOCUMENT_TYPES[item].label}
+                                            {uploads.length > 1 && ` (${uploads.length})`}
+                                        </span>
+                                        {uploads.length === 0 && <span className="badge badge-missing">Missing</span>}
+                                        {uploads.length > 0 && issues.length === 0 && <span className="badge badge-done">✓ Done</span>}
                                         {issues.length > 0 && (
                                             <>
-                                                {" "}⚠️ Needs attention
-                                                <ul>
+                                                <span className="badge badge-attention">⚠️ Needs attention</span>
+                                                <ul className="doc-issues">
                                                     {issues.map((issue) => (
                                                         <li key={issue}>{issue}</li>
                                                     ))}
@@ -160,33 +192,11 @@ export default function IntakeUpload({ goNext }) {
                 );
             })}
 
-            <button disabled={uploading} onClick={() => handleUpload(false)}>
-                Upload files
-            </button>
-            <button disabled={uploading} onClick={() => handleUpload(true)}>
-                Take photo
-            </button>
-
-            <p>You can select several files at once.</p>
-
-            {progress && (
-                <p>Reading document {progress.index} of {progress.total}: {progress.name}...</p>
-            )}
-            {!uploading && readCount > 1 && <p>{readCount} documents read ✓</p>}
-            {!uploading && problems.length > 0 && (
-                <div>
-                    <p>{problems.length === 1 ? "One file wasn't added:" : `${problems.length} files weren't added:`}</p>
-                    <ul>
-                        {problems.map((p, i) => (
-                            <li key={`${p.name}-${i}`}>{p.name}: {p.message}</li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-
-            <button disabled={uploading} onClick={handleContinue}>
-                {isFixing ? "Back to my results" : "Continue"}
-            </button>
+            <div className="actions">
+                <button className="btn-primary" disabled={uploading} onClick={handleContinue}>
+                    {isFixing ? "Back to my results" : "Continue"}
+                </button>
+            </div>
         </div>
     );
 }

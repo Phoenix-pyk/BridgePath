@@ -16,13 +16,14 @@ The more documents someone uploads, the fewer questions they're asked.
 | --- | --- |
 | `POST /api/extract`: Gemini document extraction | ✅ Working |
 | `POST /api/eligibility`: SNAP eligibility screening | ✅ Working (51 backend tests) |
-| Consent screen | ✅ Working (body copy is still placeholder text) |
+| Home page | ✅ Working (logo, what BridgePath does, "I'm ready to apply") |
+| Consent screen | ✅ Working (what we collect, why, who sees it, how long we keep it) |
 | Document upload screen | ✅ Working against the real backend |
 | Household roster screen | ✅ Working |
-| Questions screen | ✅ Working (every LDSS-4826 question, paged, unstyled) |
+| Questions screen | ✅ Working (every LDSS-4826 question, paged) |
 | Results screen | ✅ Working, including "Answer" / "Upload" buttons to fix what's missing |
 | Forms screen + `POST /api/forms`: fills the official LDSS-4826 PDF | ✅ Working (download, then delete your information) |
-| Styling | ⏳ Screens are plain, unstyled HTML |
+| Styling | ✅ Every screen styled (plain CSS, desktop web layout) |
 | Text-to-speech (ElevenLabs) | ⏳ Not started |
 
 ## Repository layout
@@ -127,20 +128,20 @@ The frontend calls the backend at `VITE_API_URL` (default `http://localhost:8000
 uploads show "Can't reach server". To work on the UI without the backend, set `USE_MOCK = true` in
 [frontend/src/utils/api.js](frontend/src/utils/api.js), which returns canned data instead of calling the API.
 
-**Trying the whole flow:** run both servers, agree to consent, upload documents (or skip), add people on the
+**Trying the whole flow:** run both servers, click "I'm ready to apply", agree to consent, upload documents (or skip), add people on the
 roster, answer the questions, then "See my results". Skipping a question or typing an income instead of uploading
 proof gives "We need a little more information" with buttons to fix each item.
 
 ## How it works
 
 ```
-Consent → Upload → Roster → Questions → Results ──→ Forms (download LDSS-4826)
-             │                    │         │  ▲
-             ▼                    │         │  └── fix: Answer a question / Upload a document, then re-check
-       /api/extract               │         ▼
-             │                    │   /api/eligibility
-             └──── applicant ◄────┘   (applicant sent through api.js)
-                (BridgeContext)
+Home → Consent → Upload → Roster → Questions → Results ──→ Forms (download LDSS-4826)
+                    │                    │         │  ▲
+                    ▼                    │         │  └── fix: Answer a question / Upload a document, then re-check
+              /api/extract               │         ▼
+                    │                    │   /api/eligibility
+                    └──── applicant ◄────┘   (applicant sent through api.js)
+                       (BridgeContext)
 ```
 
 Every piece of applicant data lives in one object, `applicant`, in BridgeContext. Each fact is stored as
@@ -190,15 +191,28 @@ Every piece of applicant data lives in one object, `applicant`, in BridgeContext
     [utils/applicantEdits.js](frontend/src/utils/applicantEdits.js) saves the answers.
   - A question is only asked if documents didn't already answer it.
 - **Screens**
-  - [IntakeUpload](frontend/src/screens/intakeUpload.jsx): upload documents. Several files can be selected at once;
+  - [HomeScreen](frontend/src/screens/HomeScreen/HomeScreen.jsx): the landing page with the logo, what BridgePath does and
+    "I'm ready to apply".
+  - [ConsentScreen](frontend/src/screens/ConsentScreen/ConsentScreen.jsx): what we collect and why, who else sees it, how long
+    we keep it. "Continue" is enabled once the box is ticked.
+  - [IntakeUpload](frontend/src/screens/intakeUpload/intakeUpload.jsx): upload documents. Several files can be selected at once;
     they're read one after another, and any that fail are listed without stopping the rest.
-  - [RosterScreen](frontend/src/screens/RosterScreen.jsx): who lives in the household.
-  - [QuestionScreen](frontend/src/screens/QuestionScreen.jsx): one question per page, with numbered pages to jump
+  - [RosterScreen](frontend/src/screens/RosterScreen/RosterScreen.jsx): who lives in the household.
+  - [QuestionScreen](frontend/src/screens/QuestionScreen/QuestionScreen.jsx): one question per page, with numbered pages to jump
     back and review.
-  - [ResultsScreen](frontend/src/screens/ResultsScreen.jsx): the eligibility result. Each missing item gets
+  - [ResultsScreen](frontend/src/screens/ResultsScreen/ResultsScreen.jsx): the eligibility result. Each missing item gets
     **Answer** and/or **Upload** buttons. An upload made for a specific person fills that person's details, and
     uploaded proof of income replaces the amount the user typed. See
     [utils/fixPlan.js](frontend/src/utils/fixPlan.js) and [data/fixSources.js](frontend/src/data/fixSources.js).
+  - [FormsScreen](frontend/src/screens/FormsScreen/FormsScreen.jsx): creates and downloads the filled LDSS-4826, lists next
+    steps, and "Delete my information and start over" returns to the home page with nothing kept.
+- **Styling** (plain CSS, no UI libraries, desktop web layout, no mobile breakpoints)
+  - [index.css](frontend/src/index.css): theme variables in `:root` (logo colors, Inter font, spacing, radius) and
+    the shared styles: header with logo and progress bar, a 560px centered column, buttons (`btn-primary`,
+    `btn-link`, `btn-small`, `btn-danger`), large choice buttons (`.options`), checkbox rows, inputs. Every color
+    comes from a `:root` variable.
+  - Each screen has its own folder holding its `.jsx` and `.css` (e.g. `screens/ResultsScreen/ResultsScreen.css`), and the screen imports its CSS.
+  - The header and progress bar are rendered by [App.jsx](frontend/src/App.jsx) on every step except the home page.
 
 [CLAUDE.md](CLAUDE.md) has the detailed architecture notes, open cross-team issues and post-MVP ideas.
 
@@ -216,7 +230,6 @@ See [Running the tests](#running-the-tests).
 
 ## Next up
 
-- **Styling:** status cards on the results screen, then a consistent look across all screens
 - **Open cross-team issue:** refugees and asylees are currently screened as ineligible (see CLAUDE.md)
 - **After the MVP:** see "Post-MVP improvement ideas" in CLAUDE.md (early "not eligible", saving skipped questions,
   merging duplicate people, reviewing what documents filled in, drag-and-drop uploads)
