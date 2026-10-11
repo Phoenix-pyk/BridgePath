@@ -109,8 +109,8 @@ def test_route_returns_base64_pdf():
     r = post({"applicant": wrap(applicant()), "benefits": ["SNAP"]})
     assert r.status_code == 200
     forms = r.json()["forms"]
-    assert [f["name"] for f in forms] == ["LDSS-4826"]
-    assert base64.b64decode(forms[0]["pdf"]).startswith(b"%PDF")
+    assert [f["name"] for f in forms] == ["LDSS-4826", "SNAP-Checklist"]
+    assert all(base64.b64decode(f["pdf"]).startswith(b"%PDF") for f in forms)
 
 
 @pytest.mark.parametrize("body,detail", [

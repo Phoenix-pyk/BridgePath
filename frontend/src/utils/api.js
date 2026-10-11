@@ -71,13 +71,14 @@ function forEligibility(applicant) {
 
 // POST /api/forms: the FULL applicant (SSN, phones and addresses go on the
 // form, so unlike checkEligibility nothing is stripped) + which benefits to
-// fill → { forms: [{ name: "LDSS-4826", pdf: "<base64>" }] }
+// fill → { forms: [{ name: "LDSS-4826", pdf: "<base64>" }, { name: "SNAP-Checklist", pdf }] }
+// (per benefit: the filled form, then the checklist for applying online)
 export async function createForms(applicant, benefits) {
     if(USE_MOCK){
         await new Promise((r) => setTimeout(r, 800));
         // A minimal valid one-page PDF
         const pdf = "JVBERi0xLjEKMSAwIG9iajw8L1R5cGUvQ2F0YWxvZy9QYWdlcyAyIDAgUj4+ZW5kb2JqCjIgMCBvYmo8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE+PmVuZG9iagozIDAgb2JqPDwvVHlwZS9QYWdlL1BhcmVudCAyIDAgUi9NZWRpYUJveFswIDAgNjEyIDc5Ml0+PmVuZG9iagp0cmFpbGVyPDwvUm9vdCAxIDAgUj4+Cg==";
-        return { forms: benefits.map(() => ({ name: "LDSS-4826", pdf })) };
+        return { forms: benefits.flatMap(() => [{ name: "LDSS-4826", pdf }, { name: "SNAP-Checklist", pdf }]) };
     }
     const response = await request("/api/forms", {
         method: "POST",

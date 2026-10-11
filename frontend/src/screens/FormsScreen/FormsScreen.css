@@ -57,3 +57,11 @@
 .forms .section h2 {
   margin-top: 0;
 }
+
+.forms-download {
+  margin-bottom: var(--space-5);
+}
+
+.forms-download .helper {
+  margin: var(--space-2) 0 0;
+}

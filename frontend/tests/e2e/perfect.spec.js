@@ -179,6 +179,7 @@ test("Complete applicant: every document and every answer, then the filled form"
     await page.getByRole("button", { name: "Create my application" }).click();
     const link = page.getByRole("link", { name: "Download LDSS-4826 (PDF)" });
     await expect(link).toBeVisible();
+    await expect(page.getByRole("link", { name: "Download my checklist (PDF)" })).toBeVisible();
     await snap(page, "Forms: ready to download");
 
     const downloading = page.waitForEvent("download");

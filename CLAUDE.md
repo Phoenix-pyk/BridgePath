@@ -27,7 +27,7 @@ Copy `backend/.env.example` to `backend/.env` and set `GEMINI_API_KEY` (get one 
 https://aistudio.google.com/apikey) before running — `app/main.py` calls `load_dotenv()` before importing
 anything that constructs a Gemini client.
 
-Tests (eligibility + forms; 69 tests, no live API key needed): `python -m pytest tests` from `backend/`. There is no lint
+Tests (eligibility + forms + checklist; 92 tests, no live API key needed): `python -m pytest tests` from `backend/`. There is no lint
 config. `/api/extract` has no tests; to sanity-check it use `TestClient` from `fastapi.testclient` against
 `app.main.app`. `scripts/check_extraction_coverage.py` + `scripts/sample_docs/` are for checking extraction coverage.
 
@@ -108,9 +108,17 @@ app/services/analytics.py (telemetry)              BridgePathExtractionPayload (
 - **`app/routes/forms.py`** — `POST /api/forms`, body `{applicant, benefits: ["SNAP"]}` (same `{value, source}` applicant tree as
   `/eligibility`; reuses its `split_values_and_sources`). Parses by hand (no 422 echo). 400 `"No benefits to create forms for."` /
   `"Unknown benefit."` / `"No information to fill the forms."`; any fill failure is a generic 500
-  `"Couldn't create your forms, try again."`. Returns `{forms: [{name: "LDSS-4826", pdf: <base64>}]}` — one filled form per benefit,
-  **no cover sheet yet** (`cover_sheet.py` is still an empty stub; append its entry to the list when built). PDFs stay in memory;
-  telemetry is `log_forms_event(benefit)` only.
+  `"Couldn't create your forms, try again."`. Returns `{forms: [{name: "LDSS-4826", pdf: <base64>}, {name: "SNAP-Checklist", pdf}]}`
+  — per benefit, the filled form then its checklist; **no cover sheet yet** (`cover_sheet.py` is still an empty stub; append its
+  entry to the list when built). PDFs stay in memory; telemetry is `log_forms_event(benefit)` only.
+- **`app/services/checklist.py`** — `build_checklist(benefit, values) -> (name, pdf bytes)`, built with **reportlab**: every
+  collected fact organized like the online SNAP application (About you, Household members, Income, Money and property, Housing
+  and utilities, Expenses, Other questions, Representative and notes, Documents to have ready), as label | value rows of
+  selectable text so the applicant can copy them into myBenefits / ACCESS HRA, with a tick box per section. Unanswered facts
+  print "Not provided"; deliberate skips (`""`, `"NONE"`, `[]`) print their meaning. `checklist_sections(values)` is the plain-data
+  layer (tested directly); `_render` lays it out. Reuses `pdf_filler`'s formatters. `LABELS` turns stored codes into the
+  QuestionBank option wording — `tests/test_checklist.py` fails if a QuestionBank option is missing there, so update both
+  together. "Documents to have ready" picks factors from `document_requirements.py` that fit the household.
 - **`app/services/pdf_filler.py`** — `fill_form(benefit, values) -> (form name, pdf bytes)`; `TEMPLATES` maps SNAP to
   `4826_fillable_named.pdf`. Not a name-for-name match: `build_snap_fields` explicitly maps the applicant shape to the PDF's field
   names (address string is split into street/apt/city/zip; row 0 of the household table uses checkboxes, rows 1+ use "Y"/"N" text;
@@ -118,7 +126,7 @@ app/services/analytics.py (telemetry)              BridgePathExtractionPayload (
   2 vehicles / 4 education rows). Signature/date boxes are left blank for the applicant. Raises `UnknownBenefitError` for an unknown benefit.
 - **`app/services/snap_standards.py`** — numeric constants (FY2027 poverty-level-based gross limits, tier
   percentages, eligible immigration statuses). Update each October. Some values are marked UNVERIFIED in comments.
-- **`tests/`** — `test_eligibility.py` (51 tests) and `applicant_fixture.py` (a fictional full applicant plus
+- **`tests/`** — `test_eligibility.py` (51 tests), `test_forms.py`, `test_checklist.py`, and `applicant_fixture.py` (a fictional full applicant plus
   `wrap()` to produce the `{value, source}` form; also generates `frontend/src/data/applicantFullMock.json`).
 - **`app/services/document_requirements.py`** — static reference data (not wired into any route) transcribed
   from the official LDSS-2921 instructions' documentation-requirements table (PUB-1301, pages 18–19), mapping
@@ -227,8 +235,9 @@ memberId?, proof?, replace?, reason?}`.
 - **`src/screens/FormsScreen/FormsScreen.jsx`** — last step. Shows each benefit's status from context `results` (no re-check),
   "Create my application" → `api.createForms(applicant, benefits)` (benefits from `results`, default `["SNAP"]`; the
   form is offered even after `not_eligible` — right to apply), turns each returned base64 PDF into a Blob URL
-  download link (`LDSS-4826.pdf`, revoked on unmount), stores form names in context `forms`, lists next steps (sign
-  page 8, submit online/mail/in person, phone interview; nothing is submitted for them). "Delete my information and
+  download link (`LDSS-4826.pdf` "Download LDSS-4826 (PDF)" and `SNAP-Checklist.pdf` "Download my checklist (PDF)", labels in
+  `DOWNLOADS`; revoked on unmount), stores form names in context `forms`, lists next steps (apply online with the checklist, or on
+  paper: sign page 8 and mail/bring it; phone interview; nothing is submitted for them). "Delete my information and
   start over" calls `reset()` and returns to the home screen — this is the consent screen's deletion promise (data otherwise
   lives only in tab memory).
 - **`src/utils/fixPlan.js`** — `planFix(applicant, missingItem)` → `{text, answer, upload}` (`answer`/`upload` are
@@ -263,7 +272,7 @@ memberId?, proof?, replace?, reason?}`.
   throws an `Error` whose message is the backend's `detail` when present (those details are generic and PII-free
   by design), otherwise `"Server error: <status>"`, or `"Can't reach server"`.
   - `extract(file)` → `POST /api/extract` → `{documentType, fields, issues}`.
-  - `createForms(applicant, benefits)` → `POST /api/forms` → `{forms: [{name, pdf (base64)}]}`. Sends the **full**
+  - `createForms(applicant, benefits)` → `POST /api/forms` → `{forms: [{name, pdf (base64)}]}` (form + checklist per benefit). Sends the **full**
     applicant (SSN, phones, addresses go on the form), unlike `checkEligibility`.
   - `checkEligibility(applicant)` → `POST /api/eligibility` → `{results: [...]}`. Sends `{ applicant }` minus
     identifiers eligibility doesn't need (`forEligibility`: SSN, phones, addresses, landlord/heat account, free-text

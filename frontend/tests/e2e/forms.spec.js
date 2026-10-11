@@ -1,4 +1,4 @@
-// The last step: create the filled LDSS-4826, download it, then delete everything.
+// The last step: create the filled LDSS-4826 and the checklist, download them, then delete everything.
 // Run: npm run test:e2e   then   npm run test:e2e:report
 
 import { readFile } from "node:fs/promises";
@@ -40,6 +40,13 @@ test("Forms: download the filled LDSS-4826, then delete my information", async (
     expect(pdf.includes("Jane")).toBe(true);
     expect(pdf.includes("Leo")).toBe(true);
 
+    // The checklist for applying online (from the backend's checklist.py)
+    const checklistDownloading = page.waitForEvent("download");
+    await page.getByRole("link", { name: "Download my checklist (PDF)" }).click();
+    const checklist = await checklistDownloading;
+    expect(checklist.suggestedFilename()).toBe("SNAP-Checklist.pdf");
+    expect((await readFile(await checklist.path())).subarray(0, 5).toString()).toBe("%PDF-");
+
     await page.getByRole("button", { name: "Delete my information and start over" }).click();
     await expect(page.getByRole("button", { name: "I'm ready to apply" })).toBeVisible();
     await snap(page, "After delete: back to the start, nothing kept");
@@ -66,5 +73,6 @@ test("Forms: offered even when the screening says not eligible", async ({ page }
     await expect(page.getByText("SNAP: your household may not qualify, but you can still apply.")).toBeVisible();
     await page.getByRole("button", { name: "Create my application" }).click();
     await expect(page.getByRole("link", { name: "Download LDSS-4826 (PDF)" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Download my checklist (PDF)" })).toBeVisible();
     await snap(page, "Forms: available after a not-eligible result");
 });

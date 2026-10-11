@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Request, status
 
 from app.routes.eligibility import _has_any_value, split_values_and_sources
 from app.services.analytics import log_forms_event
+from app.services.checklist import build_checklist
 from app.services.pdf_filler import fill_form
 
 router = APIRouter(prefix="/forms", tags=["forms"])
@@ -22,7 +23,8 @@ GENERIC_FAILURE_DETAIL = "Couldn't create your forms, try again."
 async def create_forms(request: Request):
     """
     Body: { applicant: { ...nested, each leaf {value, source} }, benefits: ["SNAP", ...] }.
-    Returns { forms: [ {name, pdf (base64)} ] }, one filled form per benefit.
+    Returns { forms: [ {name, pdf (base64)} ] }: per benefit, the filled form (e.g. "LDSS-4826") followed by
+    its checklist (e.g. "SNAP-Checklist", every answer organized for copying into the online application).
     - Parses the body by hand so FastAPI's 422 handler never echoes the applicant's data back.
     - PDFs live in memory only; nothing is saved, printed or logged. Telemetry is the benefit name only.
     """
@@ -49,8 +51,9 @@ async def create_forms(request: Request):
     forms = []
     try:
         for benefit in dict.fromkeys(benefits):  # de-duplicated, order kept
-            name, pdf_bytes = fill_form(benefit, values)
-            forms.append({"name": name, "pdf": base64.b64encode(pdf_bytes).decode("ascii")})
+            # The filled official form, then the checklist to copy from when applying online
+            for name, pdf_bytes in (fill_form(benefit, values), build_checklist(benefit, values)):
+                forms.append({"name": name, "pdf": base64.b64encode(pdf_bytes).decode("ascii")})
     except Exception:
         # Intentionally generic and detail-free (zero PII in logs or responses)
         logger.warning("Form filling failed")
