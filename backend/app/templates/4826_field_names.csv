@@ -1,0 +1,299 @@
+﻿pdf_page,printed_page,x,y,target_type,action,printed_label,current_name,NEW_NAME
+1,cover,107,324,checkbox,convert text->checkbox (delete + redraw),Alternative-format notices? Yes,Yes,form__alt_format_notices__yes
+1,cover,215,324,checkbox,convert text->checkbox (delete + redraw),Alternative-format notices? No,No,form__alt_format_notices__no
+1,cover,376,299,checkbox,rename only,Format: Large Print,Check Box1,form__alt_format__large_print
+1,cover,516,298,checkbox,convert text->checkbox (delete + redraw),Format: Data CD,Data CD,form__alt_format__data_cd
+1,cover,631,298,checkbox,convert text->checkbox (delete + redraw),Format: Audio CD,Audio CD,form__alt_format__audio_cd
+1,cover,26,279,checkbox,rename only,Format: Braille,Check Box2,form__alt_format__braille
+3,1,366,505,text,current name shared by several widgets,Telephone Number,Text3,extra__phone
+3,1,641,505,text,rename only,Other phone where you can be reached,Other phone where you can be reached,extra__other_phone
+3,1,74,503,text,current name shared by several widgets,Legal Name (derived: first + last),Text3,household_members__0__full_name
+3,1,463,490,text,current name shared by several widgets,Residence Apt.#,undefined,primary_address__apt
+3,1,500,490,text,rename only,Residence City,City,primary_address__city
+3,1,679,490,text,rename only,Residence Zip Code,NY  Zip Code,primary_address__zip
+3,1,100,489,text,current name shared by several widgets,Residence Address,Text3,primary_address__street
+3,1,130,474,text,current name shared by several widgets,Mailing Address (if different),Text3,mailing_address__street
+3,1,464,474,text,current name shared by several widgets,Mailing Apt.#,undefined,mailing_address__apt
+3,1,501,474,text,rename only,Mailing City,City_2,mailing_address__city
+3,1,680,474,text,rename only,Mailing Zip Code,NY  Zip Code_2,mailing_address__zip
+3,1,128,457,text,current name shared by several widgets,Known by Any Other Name,Text3,household_members__0__other_names
+3,1,322,457,checkbox,current name shared by several widgets,Are you: Applying,Check Box4,form__action__apply
+3,1,386,457,checkbox,current name shared by several widgets,Are you: Recertifying,Check Box4,form__action__recertify
+3,1,586,457,checkbox,current name shared by several widgets,Notices in: Spanish and English,Check Box4,form__notices__spanish_and_english
+3,1,699,457,checkbox,current name shared by several widgets,Notices in: English,Check Box4,form__notices__english
+3,1,385,410,text,rename only,Applicant/Representative SIGNATURE (box above table),APPLICANTREPRESENTATIVE SIGNATURE,form__acceptance_signature
+3,1,667,410,text,rename only,DATE SIGNED (box above table),DATE SIGNED,form__acceptance_signature_date
+3,1,38,301,text,rename only,Person 1 First Name,First Name1,household_members__0__first_name
+3,1,114,301,text,rename only,Person 1 M.I.,M I1,household_members__0__middle_initial
+3,1,132,301,text,rename only,Person 1 Last Name,Last Name1,household_members__0__last_name
+3,1,228,301,text,rename only,Person 1 SSN,Social Security Number SSN of applying member If none write NONE1,household_members__0__ssn
+3,1,324,301,text,rename only,Person 1 Date of Birth,Date of Birth1,household_members__0__dob
+3,1,384,301,text,rename only,Person 1 Marital Status,Marital Status1,household_members__0__marital_status
+3,1,438,301,text,rename only,Person 1 Sex (M/F/X),Sex M F Or X1,household_members__0__sex
+3,1,492,301,checkbox,convert text->checkbox (delete + redraw),Person 1 Applying? No,No_2,household_members__0__is_applying__no
+3,1,588,301,checkbox,convert text->checkbox (delete + redraw),Person 1 Buy/prepare food? No,No_3,household_members__0__buys_and_prepares_with_household__no
+3,1,612,301,checkbox,convert text->checkbox (delete + redraw),Person 1 Hispanic/Latino? Yes,Yes_2,household_members__0__is_hispanic_latino__yes
+3,1,636,301,checkbox,convert text->checkbox (delete + redraw),Person 1 Hispanic/Latino? No,No_4,household_members__0__is_hispanic_latino__no
+3,1,660,301,text,rename only,"Person 1 Race codes (I,A,B,P,W)",I,household_members__0__race_codes
+3,1,38,279,text,rename only,Person 2 First Name,First Name2,household_members__1__first_name
+3,1,114,279,text,rename only,Person 2 M.I.,M I2,household_members__1__middle_initial
+3,1,132,279,text,rename only,Person 2 Last Name,Last Name2,household_members__1__last_name
+3,1,228,279,text,rename only,Person 2 SSN,Social Security Number SSN of applying member If none write NONE2,household_members__1__ssn
+3,1,324,279,text,rename only,Person 2 Date of Birth,Date of Birth2,household_members__1__dob
+3,1,384,279,text,rename only,Person 2 Marital Status,Marital Status2,household_members__1__marital_status
+3,1,439,279,text,rename only,Person 2 Sex (M/F/X),Sex M F Or X2,household_members__1__sex
+3,1,468,279,text,rename only,Person 2 Is this person applying? (Y/N),undefined_2,household_members__1__is_applying
+3,1,517,279,text,rename only,Person 2 Relationship to you,self2,household_members__1__relationship_to_applicant
+3,1,564,279,text,rename only,Person 2 Buy/prepare food with household? (Y/N),undefined_3,household_members__1__buys_and_prepares_with_household
+3,1,612,279,text,rename only,Person 2 Hispanic/Latino? (Y/N),undefined_4,household_members__1__is_hispanic_latino
+3,1,660,279,text,rename only,"Person 2 Race codes (I,A,B,P,W)",undefined_5,household_members__1__race_codes
+3,1,38,258,text,rename only,Person 3 First Name,First Name3,household_members__2__first_name
+3,1,114,258,text,rename only,Person 3 M.I.,M I3,household_members__2__middle_initial
+3,1,132,258,text,rename only,Person 3 Last Name,Last Name3,household_members__2__last_name
+3,1,228,258,text,rename only,Person 3 SSN,Social Security Number SSN of applying member If none write NONE3,household_members__2__ssn
+3,1,324,258,text,rename only,Person 3 Date of Birth,Date of Birth3,household_members__2__dob
+3,1,384,258,text,rename only,Person 3 Marital Status,Marital Status3,household_members__2__marital_status
+3,1,439,258,text,rename only,Person 3 Sex (M/F/X),Sex M F Or X3,household_members__2__sex
+3,1,468,258,text,rename only,Person 3 Is this person applying? (Y/N),undefined_6,household_members__2__is_applying
+3,1,517,258,text,rename only,Person 3 Relationship to you,self3,household_members__2__relationship_to_applicant
+3,1,564,258,text,rename only,Person 3 Buy/prepare food with household? (Y/N),undefined_7,household_members__2__buys_and_prepares_with_household
+3,1,612,258,text,rename only,Person 3 Hispanic/Latino? (Y/N),undefined_8,household_members__2__is_hispanic_latino
+3,1,660,258,text,rename only,"Person 3 Race codes (I,A,B,P,W)",undefined_9,household_members__2__race_codes
+3,1,38,237,text,rename only,Person 4 First Name,First Name4,household_members__3__first_name
+3,1,114,237,text,rename only,Person 4 M.I.,M I4,household_members__3__middle_initial
+3,1,132,237,text,rename only,Person 4 Last Name,Last Name4,household_members__3__last_name
+3,1,228,237,text,rename only,Person 4 SSN,Social Security Number SSN of applying member If none write NONE4,household_members__3__ssn
+3,1,324,237,text,rename only,Person 4 Date of Birth,Date of Birth4,household_members__3__dob
+3,1,384,237,text,rename only,Person 4 Marital Status,Marital Status4,household_members__3__marital_status
+3,1,439,237,text,rename only,Person 4 Sex (M/F/X),Sex M F Or X4,household_members__3__sex
+3,1,468,237,text,rename only,Person 4 Is this person applying? (Y/N),undefined_10,household_members__3__is_applying
+3,1,517,237,text,rename only,Person 4 Relationship to you,self4,household_members__3__relationship_to_applicant
+3,1,564,237,text,rename only,Person 4 Buy/prepare food with household? (Y/N),undefined_11,household_members__3__buys_and_prepares_with_household
+3,1,612,237,text,rename only,Person 4 Hispanic/Latino? (Y/N),undefined_12,household_members__3__is_hispanic_latino
+3,1,660,237,text,rename only,"Person 4 Race codes (I,A,B,P,W)",undefined_13,household_members__3__race_codes
+3,1,38,215,text,rename only,Person 5 First Name,First Name5,household_members__4__first_name
+3,1,114,215,text,rename only,Person 5 M.I.,M I5,household_members__4__middle_initial
+3,1,132,215,text,rename only,Person 5 Last Name,Last Name5,household_members__4__last_name
+3,1,228,215,text,rename only,Person 5 SSN,Social Security Number SSN of applying member If none write NONE5,household_members__4__ssn
+3,1,324,215,text,rename only,Person 5 Date of Birth,Date of Birth5,household_members__4__dob
+3,1,384,215,text,rename only,Person 5 Marital Status,Marital Status5,household_members__4__marital_status
+3,1,439,215,text,rename only,Person 5 Sex (M/F/X),Sex M F Or X5,household_members__4__sex
+3,1,468,215,text,rename only,Person 5 Is this person applying? (Y/N),undefined_14,household_members__4__is_applying
+3,1,517,215,text,rename only,Person 5 Relationship to you,self5,household_members__4__relationship_to_applicant
+3,1,564,215,text,rename only,Person 5 Buy/prepare food with household? (Y/N),undefined_15,household_members__4__buys_and_prepares_with_household
+3,1,612,215,text,rename only,Person 5 Hispanic/Latino? (Y/N),undefined_16,household_members__4__is_hispanic_latino
+3,1,660,215,text,rename only,"Person 5 Race codes (I,A,B,P,W)",undefined_17,household_members__4__race_codes
+3,1,38,194,text,rename only,Person 6 First Name,First Name6,household_members__5__first_name
+3,1,114,194,text,rename only,Person 6 M.I.,M I6,household_members__5__middle_initial
+3,1,132,194,text,rename only,Person 6 Last Name,Last Name6,household_members__5__last_name
+3,1,228,194,text,rename only,Person 6 SSN,Social Security Number SSN of applying member If none write NONE6,household_members__5__ssn
+3,1,324,194,text,rename only,Person 6 Date of Birth,Date of Birth6,household_members__5__dob
+3,1,384,194,text,rename only,Person 6 Marital Status,Marital Status6,household_members__5__marital_status
+3,1,439,194,text,rename only,Person 6 Sex (M/F/X),Sex M F Or X6,household_members__5__sex
+3,1,468,194,text,rename only,Person 6 Is this person applying? (Y/N),undefined_18,household_members__5__is_applying
+3,1,517,194,text,rename only,Person 6 Relationship to you,self6,household_members__5__relationship_to_applicant
+3,1,564,194,text,rename only,Person 6 Buy/prepare food with household? (Y/N),undefined_19,household_members__5__buys_and_prepares_with_household
+3,1,612,194,text,rename only,Person 6 Hispanic/Latino? (Y/N),undefined_20,household_members__5__is_hispanic_latino
+3,1,660,194,text,rename only,"Person 6 Race codes (I,A,B,P,W)",undefined_21,household_members__5__race_codes
+3,1,38,173,text,rename only,Person 7 First Name,First Name7,household_members__6__first_name
+3,1,114,173,text,rename only,Person 7 M.I.,M I7,household_members__6__middle_initial
+3,1,132,173,text,rename only,Person 7 Last Name,Last Name7,household_members__6__last_name
+3,1,228,173,text,rename only,Person 7 SSN,Social Security Number SSN of applying member If none write NONE7,household_members__6__ssn
+3,1,324,173,text,rename only,Person 7 Date of Birth,Date of Birth7,household_members__6__dob
+3,1,384,173,text,rename only,Person 7 Marital Status,Marital Status7,household_members__6__marital_status
+3,1,439,173,text,rename only,Person 7 Sex (M/F/X),Sex M F Or X7,household_members__6__sex
+3,1,468,173,text,rename only,Person 7 Is this person applying? (Y/N),undefined_22,household_members__6__is_applying
+3,1,517,173,text,rename only,Person 7 Relationship to you,self7,household_members__6__relationship_to_applicant
+3,1,564,173,text,rename only,Person 7 Buy/prepare food with household? (Y/N),undefined_23,household_members__6__buys_and_prepares_with_household
+3,1,612,173,text,rename only,Person 7 Hispanic/Latino? (Y/N),undefined_24,household_members__6__is_hispanic_latino
+3,1,660,173,text,rename only,"Person 7 Race codes (I,A,B,P,W)",undefined_25,household_members__6__race_codes
+3,1,38,151,text,rename only,Person 8 First Name,First Name8,household_members__7__first_name
+3,1,114,151,text,rename only,Person 8 M.I.,M I8,household_members__7__middle_initial
+3,1,132,151,text,rename only,Person 8 Last Name,Last Name8,household_members__7__last_name
+3,1,228,151,text,rename only,Person 8 SSN,Social Security Number SSN of applying member If none write NONE8,household_members__7__ssn
+3,1,324,151,text,rename only,Person 8 Date of Birth,Date of Birth8,household_members__7__dob
+3,1,384,151,text,rename only,Person 8 Marital Status,Marital Status8,household_members__7__marital_status
+3,1,439,151,text,rename only,Person 8 Sex (M/F/X),Sex M F Or X8,household_members__7__sex
+3,1,468,151,text,rename only,Person 8 Is this person applying? (Y/N),RaceEthnic Codes I  Native American or Alaskan Native  A Asian  B  Black or African American  P  Native Hawaiian or Pacific Islander  W  White,household_members__7__is_applying
+3,1,517,151,text,rename only,Person 8 Relationship to you,self8,household_members__7__relationship_to_applicant
+3,1,564,151,text,rename only,Person 8 Buy/prepare food with household? (Y/N),undefined_26,household_members__7__buys_and_prepares_with_household
+3,1,612,151,text,rename only,Person 8 Hispanic/Latino? (Y/N),undefined_27,household_members__7__is_hispanic_latino
+3,1,660,151,text,rename only,"Person 8 Race codes (I,A,B,P,W)",The provision of this information is voluntary  It will not affect the eligibility of the persons applying or the level of benefits received The reason for this information is to ensure that program benefits are,household_members__7__race_codes
+3,1,391,101,text,rename only,"Are you and everyone living with you a US citizen? - If yes, who",If No who is not a citizen,q__us_citizen__who
+3,1,221,100,checkbox,current name shared by several widgets,Are you and everyone living with you a US citizen? - Yes,Are you and is everyone living with you a US citizen,q__us_citizen__yes
+3,1,258,100,checkbox,current name shared by several widgets,Are you and everyone living with you a US citizen? - No,Are you and is everyone living with you a US citizen,q__us_citizen__no
+3,1,444,86,checkbox,current name shared by several widgets,Applying/receiving SNAP or TA in another place? - Yes,Are you or is anyone in your household applying for or receiving SNAP or Temporary Assistance in another place,q__snap_elsewhere__yes
+3,1,481,86,checkbox,current name shared by several widgets,Applying/receiving SNAP or TA in another place? - No,Are you or is anyone in your household applying for or receiving SNAP or Temporary Assistance in another place,q__snap_elsewhere__no
+3,1,198,72,checkbox,current name shared by several widgets,Is anyone living with you a veteran? - Yes,Are you or is anyone living with you a veteran,q__veteran__yes
+3,1,235,72,checkbox,current name shared by several widgets,Is anyone living with you a veteran? - No,Are you or is anyone living with you a veteran,q__veteran__no
+3,1,312,72,text,rename only,"Is anyone living with you a veteran? - If yes, who",Text14,q__veteran__who
+3,1,575,58,checkbox,current name shared by several widgets,Live in treatment center / certified group living? - Yes,Do you or does anyone live in a drug or alcohol treatment center Statecertified group living facility or Statecertified supervisedsupportive apartment,q__institution_resident__yes
+3,1,608,58,checkbox,current name shared by several widgets,Live in treatment center / certified group living? - No,Do you or does anyone live in a drug or alcohol treatment center Statecertified group living facility or Statecertified supervisedsupportive apartment,q__institution_resident__no
+4,2,25,456,text,rename only,Income row 1: Name of Person Receiving Income,Name of Person Receiving IncomeRow1,incomes__0__individual_name
+4,2,218,456,text,rename only,Income row 1: Source of Income,Source of IncomeRow1,incomes__0__employer_or_source_name
+4,2,354,456,text,rename only,Income row 1: Hours Worked Per Month,Hours Worked Per MonthRow1,incomes__0__hours_worked_per_month
+4,2,491,456,text,rename only,Income row 1: How often received,How Often is it Received for example weekly biweekly monthlyRow1,incomes__0__frequency
+4,2,641,456,text,rename only,Income row 1: Gross Amount Before Deductions,Gross Amount Received Before DeductionsRow1,incomes__0__gross_amount
+4,2,25,439,text,rename only,Income row 2: Name of Person Receiving Income,Name of Person Receiving IncomeRow2,incomes__1__individual_name
+4,2,218,439,text,rename only,Income row 2: Source of Income,Source of IncomeRow2,incomes__1__employer_or_source_name
+4,2,354,439,text,rename only,Income row 2: Hours Worked Per Month,Hours Worked Per MonthRow2,incomes__1__hours_worked_per_month
+4,2,491,439,text,rename only,Income row 2: How often received,How Often is it Received for example weekly biweekly monthlyRow2,incomes__1__frequency
+4,2,641,439,text,rename only,Income row 2: Gross Amount Before Deductions,Gross Amount Received Before DeductionsRow2,incomes__1__gross_amount
+4,2,25,422,text,rename only,Income row 3: Name of Person Receiving Income,Name of Person Receiving IncomeRow3,incomes__2__individual_name
+4,2,218,422,text,rename only,Income row 3: Source of Income,Source of IncomeRow3,incomes__2__employer_or_source_name
+4,2,354,422,text,rename only,Income row 3: Hours Worked Per Month,Hours Worked Per MonthRow3,incomes__2__hours_worked_per_month
+4,2,491,422,text,rename only,Income row 3: How often received,How Often is it Received for example weekly biweekly monthlyRow3,incomes__2__frequency
+4,2,641,422,text,rename only,Income row 3: Gross Amount Before Deductions,Gross Amount Received Before DeductionsRow3,incomes__2__gross_amount
+4,2,550,409,text,rename only,"Child/dependent care costs for work/training? - If yes, who",No   If Yes who,q__child_care_costs__who
+4,2,436,408,checkbox,rename only,Child/dependent care costs for work/training? - Yes,Yes_7,q__child_care_costs__yes
+4,2,473,408,checkbox,rename only,Child/dependent care costs for work/training? - No,undefined_28,q__child_care_costs__no
+4,2,90,393,text,rename only,Child care: Amount paid,Amount paid,q__child_care_costs__amount
+4,2,303,393,text,rename only,Child care: How often paid,How often paid eg weekly monthly,q__child_care_costs__frequency
+4,2,622,378,checkbox,current name shared by several widgets,Changed/quit jobs or reduced income in last 30 days? - Yes,Have you or has anyone living with you changed or quit jobs or reduced any form of income in the last 30 days  including reduced work hours or income,q__income_changed_30_days__yes
+4,2,656,378,checkbox,current name shared by several widgets,Changed/quit jobs or reduced income in last 30 days? - No,Have you or has anyone living with you changed or quit jobs or reduced any form of income in the last 30 days  including reduced work hours or income,q__income_changed_30_days__no
+4,2,405,363,checkbox,current name shared by several widgets,Potential income not yet received? - Yes,Do you or does anyone living with you have any potential income that has not yet been received,q__potential_income__yes
+4,2,441,363,checkbox,current name shared by several widgets,Potential income not yet received? - No,Do you or does anyone living with you have any potential income that has not yet been received,q__potential_income__no
+4,2,383,349,text,rename only,"Participating in a strike? - If yes, who",If Yes who,q__strike__who
+4,2,263,348,checkbox,current name shared by several widgets,Participating in a strike? - Yes,Are you or is anyone living with you participating in a strike,q__strike__yes
+4,2,299,348,checkbox,current name shared by several widgets,Participating in a strike? - No,Are you or is anyone living with you participating in a strike,q__strike__no
+4,2,311,333,checkbox,current name shared by several widgets,In foster care on 18th birthday? - Yes,Were you or anyone living with you in foster care on your 18th birthday,q__foster_care_18__yes
+4,2,347,333,checkbox,current name shared by several widgets,In foster care on 18th birthday? - No,Were you or anyone living with you in foster care on your 18th birthday,q__foster_care_18__no
+4,2,318,318,checkbox,current name shared by several widgets,"Boarder, foster child, or foster adult? - Yes",Are you or is anyone living with you a boarder foster child or foster adult,q__boarder_or_foster__yes
+4,2,354,318,checkbox,current name shared by several widgets,"Boarder, foster child, or foster adult? - No",Are you or is anyone living with you a boarder foster child or foster adult,q__boarder_or_foster__no
+4,2,413,304,text,rename only,Boarder/foster Name,Name,q__boarder_or_foster__name
+4,2,308,303,checkbox,rename only,Check B for boarder,B,q__boarder_or_foster__boarder
+4,2,340,303,checkbox,rename only,Check F for foster,F,q__boarder_or_foster__foster
+4,2,29,243,text,rename only,Money household has: $,undefined_29,resources__cash_on_hand__amount
+4,2,142,243,text,rename only,Money household has: Belongs to,Belongs to,resources__cash_on_hand__belongs_to
+4,2,623,230,checkbox,rename only,Other financial assets? No,Check Box6,q__other_financial_assets__no
+4,2,593,228,checkbox,rename only,Other financial assets? Yes,Check Box5,q__other_financial_assets__yes
+4,2,374,213,text,rename only,Other financial assets: Owner,Owner,resources__other_financial_assets__owner
+4,2,190,212,text,rename only,Other financial assets: Type,Text8,resources__other_financial_assets__type
+4,2,95,211,text,rename only,Other financial assets: amount $,Text7,resources__other_financial_assets__amount
+4,2,133,183,text,rename only,Vehicle #1 Make,Make,vehicles__0__make
+4,2,272,183,text,rename only,Vehicle #1 Model,Model,vehicles__0__model
+4,2,417,183,text,rename only,Vehicle #1 Owner,Owner_2,vehicles__0__owner
+4,2,78,182,text,current name shared by several widgets,Vehicle #1 Year,Text9,vehicles__0__year
+4,2,133,168,text,rename only,Vehicle #2 Make,Make_2,vehicles__1__make
+4,2,272,168,text,rename only,Vehicle #2 Model,Model_2,vehicles__1__model
+4,2,417,168,text,rename only,Vehicle #2 Owner,Owner_3,vehicles__1__owner
+4,2,79,167,text,current name shared by several widgets,Vehicle #2 Year,Text9,vehicles__1__year
+4,2,466,154,text,rename only,List property,If yes list property,resources__property__description
+4,2,644,154,text,rename only,Property Owner,Owner_4,resources__property__owner
+4,2,318,153,checkbox,current name shared by several widgets,Own any property incl. your home? - Yes,Do you or anyone applying own any property including your own home,q__owns_property__yes
+4,2,354,153,checkbox,current name shared by several widgets,Own any property incl. your home? - No,Do you or anyone applying own any property including your own home,q__owns_property__no
+4,2,474,138,checkbox,current name shared by several widgets,Sold/gave away/transferred cash or property in last 3 months? - Yes,Has anyone applying sold given away or transferred cash or property in the last three months to qualify for SNAP,q__transferred_assets__yes
+4,2,511,138,checkbox,current name shared by several widgets,Sold/gave away/transferred cash or property in last 3 months? - No,Has anyone applying sold given away or transferred cash or property in the last three months to qualify for SNAP,q__transferred_assets__no
+5,3,24,421,text,rename only,Education row 1: Name (First and Last),Name First and LastRow1,education__0__name
+5,3,361,421,text,rename only,Education row 1: Highest Level of Education code (0-5),0,education__0__level_code
+5,3,497,421,text,rename only,Education row 1: Highest School Grade Completed,Highest School Grade Completed see information belowRow1,education__0__highest_grade
+5,3,614,421,text,rename only,Education row 1: Primary language spoken,What is the Individuals primary language spokenRow1,education__0__primary_language
+5,3,24,403,text,rename only,Education row 2: Name (First and Last),Name First and LastRow2,education__1__name
+5,3,361,403,text,rename only,Education row 2: Highest Level of Education code (0-5),undefined_30,education__1__level_code
+5,3,497,403,text,rename only,Education row 2: Highest School Grade Completed,Highest School Grade Completed see information belowRow2,education__1__highest_grade
+5,3,614,403,text,rename only,Education row 2: Primary language spoken,What is the Individuals primary language spokenRow2,education__1__primary_language
+5,3,24,384,text,rename only,Education row 3: Name (First and Last),Name First and LastRow3,education__2__name
+5,3,361,384,text,rename only,Education row 3: Highest Level of Education code (0-5),undefined_31,education__2__level_code
+5,3,497,384,text,rename only,Education row 3: Highest School Grade Completed,Highest School Grade Completed see information belowRow3,education__2__highest_grade
+5,3,614,384,text,rename only,Education row 3: Primary language spoken,What is the Individuals primary language spokenRow3,education__2__primary_language
+5,3,24,366,text,rename only,Education row 4: Name (First and Last),Name First and LastRow4,education__3__name
+5,3,361,366,text,rename only,Education row 4: Highest Level of Education code (0-5),Education and Training Codes 0  Less than a high school diploma or equivalency 1  High school diploma or high school equivalency diploma 2  Associates Degree 2year college,education__3__level_code
+5,3,497,366,text,rename only,Education row 4: Highest School Grade Completed,Highest School Grade Completed see information belowRow4,education__3__highest_grade
+5,3,614,366,text,rename only,Education row 4: Primary language spoken,What is the Individuals primary language spokenRow4,education__3__primary_language
+5,3,41,252,checkbox,rename only,Household: Own home or paying for home,Own home or paying for home,form__living_arrangement__own_home
+5,3,195,252,checkbox,rename only,Household: Renting,Renting,form__living_arrangement__renting
+5,3,265,252,checkbox,rename only,Household: Migrant/seasonal farmworker,Migrantseasonal farmworker,form__living_arrangement__migrant_farmworker
+5,3,417,252,checkbox,rename only,Household: No permanent residence,No permanent residence,form__living_arrangement__no_permanent_residence
+5,3,552,252,checkbox,rename only,Household: Live with relatives or friends,Live with relatives or friends,form__living_arrangement__live_with_others
+5,3,366,223,text,current name shared by several widgets,Tax on home per year $,Text13,shelter__property_taxes_annual
+5,3,605,223,text,rename only,Insurance on home per year $,Insurance on home per year,shelter__homeowners_insurance_annual
+5,3,164,222,text,current name shared by several widgets,Monthly rent or mortgage payment $,Text13,shelter__rent_or_mortgage_amount
+5,3,686,208,text,rename only,Heating type: Other (list),Other list,shelter__heating_fuel_other_text
+5,3,123,207,checkbox,current name shared by several widgets,Pay separately for heat? - Yes,If so does such person have medical bills,q__pays_separate_heat__yes
+5,3,160,207,checkbox,current name shared by several widgets,Pay separately for heat? - No,If so does such person have medical bills,q__pays_separate_heat__no
+5,3,322,207,checkbox,rename only,Heating type: Gas,Gas,shelter__heating_fuel__gas
+5,3,369,207,checkbox,rename only,Heating type: Electric,Electric,shelter__heating_fuel__electric
+5,3,426,207,checkbox,rename only,Heating type: Oil,Oil,shelter__heating_fuel__oil
+5,3,468,207,checkbox,rename only,Heating type: Wood,Wood,shelter__heating_fuel__wood
+5,3,519,207,checkbox,rename only,Heating type: Coal,Coal,shelter__heating_fuel__coal
+5,3,566,207,checkbox,rename only,Heating type: Propane,Propane,shelter__heating_fuel__propane
+5,3,629,207,checkbox,rename only,Heating type: Other,undefined_32,shelter__heating_fuel__other
+5,3,94,193,text,rename only,Heat Co. Name,Heat Co Name,shelter__heat_company_name
+5,3,319,193,text,rename only,Heat Co. Acct. No.,Heat Co Acct No,shelter__heat_company_account_number
+5,3,304,171,checkbox,current name shared by several widgets,Pay for air conditioning? - Yes,Pay for air conditioning either in your electric bill or as a separate fee,q__pays_air_conditioning__yes
+5,3,341,171,checkbox,current name shared by several widgets,Pay for air conditioning? - No,Pay for air conditioning either in your electric bill or as a separate fee,q__pays_air_conditioning__no
+5,3,241,156,checkbox,rename only,Pay separately for other utilities? - Yes,Yes_17,q__pays_other_utilities__yes
+5,3,277,156,checkbox,rename only,Pay separately for other utilities? - No,No for example lights cooking gas garbagetrash water initial installation of utilities,q__pays_other_utilities__no
+5,3,191,127,text,rename only,"Does anyone else pay any of these expenses? - If yes, who",No   If yes who pays what,q__others_pay_expenses__details
+5,3,36,126,checkbox,rename only,Does anyone else pay any of these expenses? - Yes,Yes_16,q__others_pay_expenses__yes
+5,3,70,126,checkbox,rename only,Does anyone else pay any of these expenses? - No,Does anyone else pay any of these expenses for you some examples are Section 8 or other subsidy program,q__others_pay_expenses__no
+5,3,431,112,text,rename only,"Paying legally obligated child support? - If yes, who",If yes who,q__child_support_paid__who
+5,3,311,111,checkbox,current name shared by several widgets,Paying legally obligated child support? - Yes,Are you or is anyone living with you paying legally obligated child support,q__child_support_paid__yes
+5,3,348,111,checkbox,current name shared by several widgets,Paying legally obligated child support? - No,Are you or is anyone living with you paying legally obligated child support,q__child_support_paid__no
+5,3,212,97,text,rename only,Child support: Names of children,Names of children support is being paid for,q__child_support_paid__children
+5,3,107,82,text,rename only,Child support: Payment amount $,Payment amount,q__child_support_paid__amount
+5,3,434,82,text,rename only,Child support: Frequency,Frequency of payments for example weekly biweekly monthly,q__child_support_paid__frequency
+5,3,285,67,checkbox,current name shared by several widgets,Anyone disabled or at least age 60? - Yes,If so does such person have medical bills,q__disabled_or_60__yes
+5,3,321,67,checkbox,current name shared by several widgets,Anyone disabled or at least age 60? - No,If so does such person have medical bills,q__disabled_or_60__no
+5,3,404,67,text,rename only,"Anyone disabled or at least age 60? - If yes, who",If yes who_2,q__disabled_or_60__who
+5,3,203,51,checkbox,current name shared by several widgets,Does such person have medical bills? - Yes,If so does such person have medical bills,q__medical_bills__yes
+5,3,240,51,checkbox,current name shared by several widgets,Does such person have medical bills? - No,If so does such person have medical bills,q__medical_bills__no
+6,4,419,542,text,rename only,"On Medicaid with a spenddown? - If yes, who",If yes who_3,q__medicaid_spenddown__who
+6,4,646,542,text,rename only,Medicaid spenddown: Amount $,Amount,q__medicaid_spenddown__amount
+6,4,300,541,checkbox,current name shared by several widgets,On Medicaid with a spenddown? - Yes,Are you andor anyone living with you on Medicaid with a spenddown,q__medicaid_spenddown__yes
+6,4,337,541,checkbox,current name shared by several widgets,On Medicaid with a spenddown? - No,Are you andor anyone living with you on Medicaid with a spenddown,q__medicaid_spenddown__no
+6,4,473,527,text,rename only,"Age 16-17 enrolled in school/training? - If yes, who",No If yes who,q__school_16_17__who
+6,4,730,527,text,rename only,Age 16-17: Name of School/Training Program,Name of SchoolTraining Program,q__school_16_17__school_name
+6,4,363,526,checkbox,rename only,Age 16-17 enrolled in school/training? - Yes,Yes_21,q__school_16_17__yes
+6,4,397,526,checkbox,rename only,Age 16-17 enrolled in school/training? - No,Are you or anyone living with you between the ages of 18 and 49 years of age attending a school or training program above High School,q__school_16_17__no
+6,4,683,512,text,rename only,"Age 18-49 attending school/training above high school? - If yes, who",No  If yes who,q__school_18_49__who
+6,4,567,511,checkbox,rename only,Age 18-49 attending school/training above high school? - Yes,Yes_22,q__school_18_49__yes
+6,4,601,511,checkbox,rename only,Age 18-49 attending school/training above high school? - No,undefined_33,q__school_18_49__no
+6,4,165,497,text,rename only,Age 18-49: Name of School/Training program,Name of SchoolTraining program,q__school_18_49__school_name
+6,4,433,496,checkbox,current name shared by several widgets,Age 18-49: Full Time - Yes,Full Time FT,q__school_18_49__full_time__yes
+6,4,468,496,checkbox,current name shared by several widgets,Age 18-49: Full Time - No,Full Time FT,q__school_18_49__full_time__no
+6,4,555,496,checkbox,current name shared by several widgets,Age 18-49: Income - Yes,Full Time FT,q__school_18_49__income__yes
+6,4,589,496,checkbox,current name shared by several widgets,Age 18-49: Income - No,Full Time FT,q__school_18_49__income__no
+6,4,679,496,checkbox,current name shared by several widgets,Age 18-49: Expenses - Yes,Full Time FT,q__school_18_49__expenses__yes
+6,4,713,496,checkbox,current name shared by several widgets,Age 18-49: Expenses - No,Full Time FT,q__school_18_49__expenses__no
+6,4,250,467,text,rename only,"Adults who are pregnant? - If yes, who",If yes who_4,q__pregnant__who
+6,4,133,466,checkbox,current name shared by several widgets,Adults who are pregnant? - Yes,Are there adults in the household age 16 and older including the applicant who,q__pregnant__yes
+6,4,170,466,checkbox,current name shared by several widgets,Adults who are pregnant? - No,Are there adults in the household age 16 and older including the applicant who,q__pregnant__no
+6,4,556,452,text,rename only,"Medical conditions limiting ability to work? - If yes, who",If yes who_5,q__work_limiting_condition__who
+6,4,439,451,checkbox,current name shared by several widgets,Medical conditions limiting ability to work? - Yes,Have any medical conditions that limit their ability to work or the type of work that they can perform,q__work_limiting_condition__yes
+6,4,476,451,checkbox,current name shared by several widgets,Medical conditions limiting ability to work? - No,Have any medical conditions that limit their ability to work or the type of work that they can perform,q__work_limiting_condition__no
+6,4,146,398,text,rename only,"Violating probation/parole or fleeing felon? - If yes, who",If yes who_6,q__probation_fleeing_felon__who
+6,4,22,397,checkbox,current name shared by several widgets,Violating probation/parole or fleeing felon? - Yes,Are you or is anyone living with you violating a condition of probation or parole or fleeing to avoid prosecution custody or confinement for a felony and actively being pursued by law enforcement,q__probation_fleeing_felon__yes
+6,4,56,397,checkbox,current name shared by several widgets,Violating probation/parole or fleeing felon? - No,Are you or is anyone living with you violating a condition of probation or parole or fleeing to avoid prosecution custody or confinement for a felony and actively being pursued by law enforcement,q__probation_fleeing_felon__no
+6,4,504,384,text,rename only,"In violation of probation/parole per a court? - If yes, who",If yes who_7,q__probation_violation__who
+6,4,375,383,checkbox,current name shared by several widgets,In violation of probation/parole per a court? - Yes,Are you or is anyone living with you in violation of probation or parole according to a court,q__probation_violation__yes
+6,4,411,383,checkbox,current name shared by several widgets,In violation of probation/parole per a court? - No,Are you or is anyone living with you in violation of probation or parole according to a court,q__probation_violation__no
+6,4,648,370,text,rename only,"Ever disqualified from SNAP (fraud/IPV)? - If yes, who",No If yes who_2,q__snap_disqualified__who
+6,4,541,369,checkbox,rename only,Ever disqualified from SNAP (fraud/IPV)? - Yes,Yes_30,q__snap_disqualified__yes
+6,4,575,369,checkbox,rename only,Ever disqualified from SNAP (fraud/IPV)? - No,Have you or has anyone living with you been convicted of trading SNAP benefits for firearms ammunition or explosives or drugs after September 22 1996,q__snap_disqualified__no
+6,4,627,352,checkbox,current name shared by several widgets,Convicted of trading SNAP for firearms/drugs? - Yes,undefined_34,q__convicted_trading_for_weapons_drugs__yes
+6,4,661,352,checkbox,current name shared by several widgets,Convicted of trading SNAP for firearms/drugs? - No,undefined_34,q__convicted_trading_for_weapons_drugs__no
+6,4,491,339,text,rename only,"Convicted of trading SNAP for firearms/drugs? - If yes, who",If yes who_8,q__convicted_trading_for_weapons_drugs__who
+6,4,630,324,checkbox,current name shared by several widgets,Convicted of buying/selling SNAP of $500+? - Yes,Have you or has anyone living with you been convicted of buying or selling SNAP benefits for a combined amount of 500 or more after September 22 1996,q__convicted_trafficking_500__yes
+6,4,664,324,checkbox,current name shared by several widgets,Convicted of buying/selling SNAP of $500+? - No,Have you or has anyone living with you been convicted of buying or selling SNAP benefits for a combined amount of 500 or more after September 22 1996,q__convicted_trafficking_500__no
+6,4,491,311,text,rename only,"Convicted of buying/selling SNAP of $500+? - If yes, who",If yes who_9,q__convicted_trafficking_500__who
+6,4,580,296,checkbox,current name shared by several widgets,Convicted of duplicate SNAP benefits? - Yes,Have you or has anyone living with you been convicted of fraudulently receiving duplicate SNAP benefits in any State after September 22 1996,q__convicted_duplicate_benefits__yes
+6,4,614,296,checkbox,current name shared by several widgets,Convicted of duplicate SNAP benefits? - No,Have you or has anyone living with you been convicted of fraudulently receiving duplicate SNAP benefits in any State after September 22 1996,q__convicted_duplicate_benefits__no
+6,4,491,283,text,rename only,"Convicted of duplicate SNAP benefits? - If yes, who",If yes who_10,q__convicted_duplicate_benefits__who
+9,7,349,379,text,rename only,Authorized representative Address,Text11,form__auth_rep__address
+9,7,670,378,text,rename only,Authorized representative Phone,Phone,form__auth_rep__phone
+9,7,54,377,text,rename only,Authorized representative Name,Text10,form__auth_rep__name
+9,7,21,306,checkbox,rename only,Authorized rep gets EBT card,Check Box12,form__auth_rep__ebt_card
+9,7,34,197,text,rename only,APPLICANT SIGNATURE,APPLICANT SIGNATURE or Responsible Adult Household Member X,form__applicant_signature
+9,7,617,197,text,rename only,APPLICANT DATE SIGNED,DATE SIGNED_2,form__applicant_signature_date
+9,7,32,157,text,current name shared by several widgets,Authorized Representative SIGNATURE,Authorized Representative SIGNATURE X,form__auth_rep_signature
+9,7,617,157,text,rename only,Authorized Representative DATE SIGNED,DATE SIGNED_3,form__auth_rep_signature_date
+9,7,670,93,text,rename only,Helper who completed form: Phone,Phone_2,form__preparer__phone
+9,7,52,92,text,current name shared by several widgets,Helper who completed form: Name,Authorized Representative SIGNATURE X,form__preparer__name
+9,7,351,90,text,current name shared by several widgets,Helper who completed form: Address,Authorized Representative SIGNATURE X,form__preparer__address
+10,8,56,517,text,rename only,Additional info: Who #1,Who,form__additional_info__who_1
+10,8,57,468,text,rename only,Additional info: Who #2,Who_2,form__additional_info__who_2
+10,8,57,418,text,rename only,Additional info: Who #3,Who_3,form__additional_info__who_3
+10,8,359,356,text,rename only,Additional info: Explanation (all three),Use this area for additional information Who Explanation Who Explanation Who Explanation,form__additional_info__explanation
+10,8,69,310,text,rename only,Withdrawal SIGNATURE,SIGNATURE,form__withdrawal_signature
+10,8,595,310,text,rename only,Withdrawal DATE,DATE,form__withdrawal_signature_date

@@ -1,37 +1,13 @@
 // frontend/src/context/BridgeContext.jsx
 import { createContext, useState } from "react";
+import { makeEmptyApplicant } from "../utils/applicantModel.js";
 
 export const BridgeContext = createContext();
 
-const FIELD_NAMES = [
-  "fullName",
-  "dateOfBirth",
-  "address",
-  "phone",
-  "householdSize",
-  "monthlyIncome",
-  "employer",
-  "payFrequency",
-  "workHours",
-  "monthlyRent",
-  "paysUtilities",
-  "isStudent",
-  "enrollmentStatus",
-  "hasWorkStudy",
-  "hasChildUnder6",
-  "inCTEProgram",
-];
-
-function makeInitialFields() {
-  const fields = {};
-  for (const name of FIELD_NAMES) {
-    fields[name] = { value: null, source: null };
-  }
-  return fields;
-}
+// `applicant` shape: see utils/applicantModel.js
 
 export function BridgeProvider({ children }) {
-  const [fields, setFields] = useState(makeInitialFields);
+  const [applicant, setApplicant] = useState(makeEmptyApplicant);
   const [documents, setDocuments] = useState([]);
   const [questionQueue, setQuestionQueue] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -40,7 +16,7 @@ export function BridgeProvider({ children }) {
   const [forms, setForms] = useState([]);
 
   function reset() {
-    setFields(makeInitialFields());
+    setApplicant(makeEmptyApplicant());
     setDocuments([]);
     setQuestionQueue([]);
     setCurrentQuestion(0);
@@ -52,7 +28,7 @@ export function BridgeProvider({ children }) {
   return (
     <BridgeContext.Provider
       value={{
-        fields, setFields,
+        applicant, setApplicant,
         documents, setDocuments,
         questionQueue, setQuestionQueue,
         currentQuestion, setCurrentQuestion,

@@ -1,0 +1,154 @@
+
+=== driver_license_john_smith.jpg ===
+  detected doc type: Driver License
+  issues flagged: ['Driver license expired on 01-21-03.']
+{
+  "doc_type_detected": "Driver License",
+  "primary_address": "637 FOREST AV, NEW ROCHELLE, NY 10804",
+  "mailing_address": null,
+  "household_members": [
+    {
+      "first_name": "JOHN",
+      "last_name": "SMITH",
+      "dob": "1963-12-18",
+      "ssn": null,
+      "is_applicant": true,
+      "relationship_to_applicant": "Self",
+      "is_student": null,
+      "citizen_status": null,
+      "sex": "M",
+      "marital_status": null,
+      "highest_grade_completed": null,
+      "is_pregnant": null,
+      "pregnancy_due_date": null,
+      "has_work_limiting_condition": null,
+      "is_veteran": null,
+      "other_names": null
+    }
+  ],
+  "incomes": null,
+  "shelter": null,
+  "assets": null,
+  "issues_or_missing_info": [
+    "Driver license expired on 01-21-03."
+  ]
+}
+
+=== pay_stub_john_smith.pdf ===
+  detected doc type: Paystub
+{
+  "doc_type_detected": "Paystub",
+  "primary_address": "1069 Echo Lane, Grand Rapids, MI, 34900",
+  "mailing_address": null,
+  "household_members": [
+    {
+      "first_name": "John",
+      "last_name": "Smith",
+      "dob": null,
+      "ssn": null,
+      "is_applicant": true,
+      "relationship_to_applicant": "Self",
+      "is_student": null,
+      "citizen_status": null,
+      "sex": null,
+      "marital_status": null,
+      "highest_grade_completed": null,
+      "is_pregnant": null,
+      "pregnancy_due_date": null,
+      "has_work_limiting_condition": null,
+      "is_veteran": null,
+      "other_names": null
+    }
+  ],
+  "incomes": [
+    {
+      "individual_name": "John Smith",
+      "employer_or_source_name": "ABC Company",
+      "income_type": "wages",
+      "gross_amount": 5820.0,
+      "frequency": "monthly",
+      "hours_worked_per_week": null,
+      "pay_day_of_week": null,
+      "employment_type": "employed"
+    }
+  ],
+  "shelter": null,
+  "assets": null,
+  "issues_or_missing_info": []
+}
+
+=== sample-bill-1.pdf ===
+  detected doc type: Utility Bill
+{
+  "doc_type_detected": "Utility Bill",
+  "primary_address": "100 MAIN STREET, NEW YORK, NY 10001",
+  "mailing_address": null,
+  "household_members": null,
+  "incomes": null,
+  "shelter": {
+    "rent_or_mortgage_amount": null,
+    "frequency": null,
+    "landlord_name": null,
+    "landlord_phone": null,
+    "utilities": [
+      {
+        "utility_type": "water_sewer",
+        "is_included_in_rent": null,
+        "monthly_cost": 113.68
+      }
+    ],
+    "property_taxes_monthly": null,
+    "homeowners_insurance_monthly": null,
+    "lease_start_date": null
+  },
+  "assets": null,
+  "issues_or_missing_info": []
+}
+
+=== Coverage: 17/42 schema fields populated across 3 document(s) ===
+
+Populated:
+  [x] doc_type_detected
+  [x] primary_address
+  [x] household_members[].first_name
+  [x] household_members[].last_name
+  [x] household_members[].dob
+  [x] household_members[].is_applicant
+  [x] household_members[].relationship_to_applicant
+  [x] household_members[].sex
+  [x] incomes[].individual_name
+  [x] incomes[].employer_or_source_name
+  [x] incomes[].income_type
+  [x] incomes[].gross_amount
+  [x] incomes[].frequency
+  [x] incomes[].employment_type
+  [x] shelter.utilities[].utility_type
+  [x] shelter.utilities[].monthly_cost
+  [x] issues_or_missing_info[]
+
+Still missing:
+  [ ] mailing_address
+  [ ] household_members[].ssn  ->  try uploading: Social Security card, Official correspondence from SSA
+  [ ] household_members[].is_student  ->  try uploading: School records (current report card), Statement from school or higher education institution
+  [ ] household_members[].citizen_status  ->  try uploading: Birth certificate, Baptismal certificate, Hospital records, U.S. passport...
+  [ ] household_members[].marital_status  ->  try uploading: Marriage/death certificates, Separation agreement, Divorce decree, Social Security records...
+  [ ] household_members[].highest_grade_completed  ->  try uploading: School records (current report card), Statement from school or higher education institution
+  [ ] household_members[].is_pregnant  ->  try uploading: Statement from medical professional verifying pregnancy and expected date of birth, Statement from medical professional, Proof of SSA or SSI benefits for disability or blindness
+  [ ] household_members[].pregnancy_due_date  ->  try uploading: Statement from medical professional verifying pregnancy and expected date of birth, Statement from medical professional, Proof of SSA or SSI benefits for disability or blindness
+  [ ] household_members[].has_work_limiting_condition  ->  try uploading: Statement from medical professional verifying pregnancy and expected date of birth, Statement from medical professional, Proof of SSA or SSI benefits for disability or blindness
+  [ ] household_members[].is_veteran
+  [ ] household_members[].other_names[]
+  [ ] incomes[].hours_worked_per_week
+  [ ] incomes[].pay_day_of_week
+  [ ] shelter.rent_or_mortgage_amount  ->  try uploading: Current rent receipt, Current lease, Mortgage book/records, Property and school tax records...
+  [ ] shelter.frequency
+  [ ] shelter.landlord_name  ->  try uploading: Statement from landlord, Current rent receipt or lease, Mortgage records, Statement from another person...
+  [ ] shelter.landlord_phone
+  [ ] shelter.utilities[].is_included_in_rent
+  [ ] shelter.property_taxes_monthly  ->  try uploading: Current rent receipt, Current lease, Mortgage book/records, Property and school tax records...
+  [ ] shelter.homeowners_insurance_monthly  ->  try uploading: Current rent receipt, Current lease, Mortgage book/records, Property and school tax records...
+  [ ] shelter.lease_start_date
+  [ ] assets[].resource_type  ->  try uploading: Current bank records, Current credit union records, Stock certificate, Bonds...
+  [ ] assets[].amount
+  [ ] assets[].vehicle_year  ->  try uploading: Registration (older models), Title of ownership, Appraisal of current value by dealer, Financing data
+  [ ] assets[].vehicle_make_model  ->  try uploading: Registration (older models), Title of ownership, Appraisal of current value by dealer, Financing data

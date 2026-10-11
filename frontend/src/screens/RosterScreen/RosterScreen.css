@@ -1,0 +1,36 @@
+.person-list {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-5) 0;
+}
+
+.person-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  min-height: var(--control-height);
+}
+
+.person-name {
+  font-weight: 600;
+}
+
+.person-source {
+  display: block;
+  font-weight: 400;
+  font-size: 15px;
+  color: var(--text-muted);
+}
+
+.add-person h2 {
+  margin-top: 0;
+}
+
+.add-person input {
+  background: var(--surface);
+}

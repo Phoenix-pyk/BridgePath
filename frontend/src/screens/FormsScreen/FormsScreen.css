@@ -1,0 +1,67 @@
+.forms-status {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--border);
+  background: var(--surface-alt);
+  font-weight: 600;
+}
+
+.forms-status.status-eligible {
+  border-left-color: var(--primary);
+}
+
+.forms-status.status-needs_something {
+  border-left-color: var(--accent);
+}
+
+.forms-status.status-not_eligible {
+  border-left-color: var(--danger);
+}
+
+.forms-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.steps {
+  list-style: none;
+  counter-reset: step;
+  padding: 0;
+}
+
+.steps li {
+  counter-increment: step;
+  position: relative;
+  padding-left: 44px;
+  margin-bottom: var(--space-4);
+}
+
+.steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 700;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.forms .section h2 {
+  margin-top: 0;
+}
+
+.forms-download {
+  margin-bottom: var(--space-5);
+}
+
+.forms-download .helper {
+  margin: var(--space-2) 0 0;
+}

@@ -1,0 +1,343 @@
+[
+  {
+    "path": "fields.primary_address",
+    "type": "str",
+    "scope": "applicant",
+    "nullable": true,
+    "description": "Full residential address"
+  },
+  {
+    "path": "fields.mailing_address",
+    "type": "str",
+    "scope": "applicant",
+    "nullable": true
+  },
+  {
+    "path": "fields.household_members[]",
+    "type": "array<object>",
+    "repeats": true
+  },
+  {
+    "path": "fields.household_members[].first_name",
+    "type": "str",
+    "scope": "fields.household_members[]",
+    "nullable": true,
+    "description": "First name"
+  },
+  {
+    "path": "fields.household_members[].last_name",
+    "type": "str",
+    "scope": "fields.household_members[]",
+    "nullable": true,
+    "description": "Last name"
+  },
+  {
+    "path": "fields.household_members[].dob",
+    "type": "str",
+    "scope": "fields.household_members[]",
+    "nullable": true,
+    "description": "Format: YYYY-MM-DD"
+  },
+  {
+    "path": "fields.household_members[].ssn",
+    "type": "str",
+    "scope": "fields.household_members[]",
+    "nullable": true,
+    "description": "Social Security Number if visible"
+  },
+  {
+    "path": "fields.household_members[].is_applicant",
+    "type": "bool",
+    "scope": "fields.household_members[]",
+    "nullable": true
+  },
+  {
+    "path": "fields.household_members[].relationship_to_applicant",
+    "type": "str",
+    "scope": "fields.household_members[]",
+    "nullable": true,
+    "description": "e.g., Spouse, Child, Self"
+  },
+  {
+    "path": "fields.household_members[].is_student",
+    "type": "bool",
+    "scope": "fields.household_members[]",
+    "nullable": true,
+    "description": "Enrolled in college or higher education"
+  },
+  {
+    "path": "fields.household_members[].citizen_status",
+    "type": "str",
+    "scope": "fields.household_members[]",
+    "nullable": true,
+    "description": "US Citizen, Qualified Alien, etc."
+  },
+  {
+    "path": "fields.household_members[].sex",
+    "type": "str",
+    "scope": "fields.household_members[]",
+    "nullable": true,
+    "description": "M, F, or X, as printed on an ID or benefit correspondence"
+  },
+  {
+    "path": "fields.household_members[].marital_status",
+    "type": "str",
+    "scope": "fields.household_members[]",
+    "nullable": true,
+    "description": "Single, Married, Widowed, Separated, or Divorced, if shown on a marriage/death certificate or divorce decree"
+  },
+  {
+    "path": "fields.household_members[].highest_grade_completed",
+    "type": "str",
+    "scope": "fields.household_members[]",
+    "nullable": true,
+    "description": "From a school record or transcript"
+  },
+  {
+    "path": "fields.household_members[].is_pregnant",
+    "type": "bool",
+    "scope": "fields.household_members[]",
+    "nullable": true,
+    "description": "From a medical professional's statement"
+  },
+  {
+    "path": "fields.household_members[].pregnancy_due_date",
+    "type": "str",
+    "scope": "fields.household_members[]",
+    "nullable": true,
+    "description": "From a medical professional's statement"
+  },
+  {
+    "path": "fields.household_members[].has_work_limiting_condition",
+    "type": "bool",
+    "scope": "fields.household_members[]",
+    "nullable": true,
+    "description": "Whether a medical professional's statement describes a condition limiting ability to work"
+  },
+  {
+    "path": "fields.household_members[].is_veteran",
+    "type": "bool",
+    "scope": "fields.household_members[]",
+    "nullable": true,
+    "description": "From military service records or VA correspondence"
+  },
+  {
+    "path": "fields.household_members[].other_names[]",
+    "type": "array<str>",
+    "repeats": true,
+    "description": "Maiden or other names, if visible on any document"
+  },
+  {
+    "path": "fields.incomes[]",
+    "type": "array<object>",
+    "repeats": true
+  },
+  {
+    "path": "fields.incomes[].individual_name",
+    "type": "str",
+    "scope": "fields.incomes[]",
+    "nullable": true,
+    "description": "Whose income this is"
+  },
+  {
+    "path": "fields.incomes[].employer_or_source_name",
+    "type": "str",
+    "scope": "fields.incomes[]",
+    "nullable": true,
+    "description": "Name of employer or agency"
+  },
+  {
+    "path": "fields.incomes[].income_type",
+    "type": "enum",
+    "scope": "fields.incomes[]",
+    "nullable": true,
+    "options": [
+      "wages",
+      "self_employment",
+      "ssi",
+      "social_security",
+      "veterans_benefits",
+      "unemployment_insurance",
+      "workers_compensation",
+      "child_support_received",
+      "foster_care_maintenance",
+      "pension_retirement",
+      "educational_assistance",
+      "alimony",
+      "rental_roomer_boarder",
+      "other"
+    ],
+    "description": "Category of income matching the state application's own income taxonomy"
+  },
+  {
+    "path": "fields.incomes[].gross_amount",
+    "type": "float",
+    "scope": "fields.incomes[]",
+    "nullable": true,
+    "description": "Gross pay amount before deductions"
+  },
+  {
+    "path": "fields.incomes[].frequency",
+    "type": "enum",
+    "scope": "fields.incomes[]",
+    "nullable": true,
+    "options": [
+      "weekly",
+      "biweekly",
+      "monthly",
+      "semi_monthly"
+    ]
+  },
+  {
+    "path": "fields.incomes[].hours_worked_per_month",
+    "type": "float",
+    "scope": "fields.incomes[]",
+    "nullable": true,
+    "description": "Hours worked per month, matching both LDSS-2921 and LDSS-4826's 'Hours Worked Monthly' fields"
+  },
+  {
+    "path": "fields.incomes[].pay_day_of_week",
+    "type": "str",
+    "scope": "fields.incomes[]",
+    "nullable": true,
+    "description": "Day of the week paid, if printed on a paystub"
+  },
+  {
+    "path": "fields.incomes[].employment_type",
+    "type": "str",
+    "scope": "fields.incomes[]",
+    "nullable": true,
+    "description": "'employed' or 'self-employed', as implied by the source document"
+  },
+  {
+    "path": "fields.shelter",
+    "type": "object",
+    "repeats": false
+  },
+  {
+    "path": "fields.shelter.rent_or_mortgage_amount",
+    "type": "float",
+    "scope": "applicant",
+    "nullable": true
+  },
+  {
+    "path": "fields.shelter.frequency",
+    "type": "enum",
+    "scope": "applicant",
+    "nullable": true,
+    "options": [
+      "weekly",
+      "biweekly",
+      "monthly",
+      "semi_monthly"
+    ]
+  },
+  {
+    "path": "fields.shelter.landlord_name",
+    "type": "str",
+    "scope": "applicant",
+    "nullable": true
+  },
+  {
+    "path": "fields.shelter.landlord_phone",
+    "type": "str",
+    "scope": "applicant",
+    "nullable": true
+  },
+  {
+    "path": "fields.shelter.utilities[]",
+    "type": "array<object>",
+    "repeats": true
+  },
+  {
+    "path": "fields.shelter.utilities[].utility_type",
+    "type": "enum",
+    "scope": "fields.shelter.utilities[]",
+    "nullable": true,
+    "options": [
+      "heating_primary",
+      "electric_lighting",
+      "cooking_gas",
+      "water_sewer",
+      "trash"
+    ]
+  },
+  {
+    "path": "fields.shelter.utilities[].is_included_in_rent",
+    "type": "bool",
+    "scope": "fields.shelter.utilities[]",
+    "nullable": true
+  },
+  {
+    "path": "fields.shelter.utilities[].monthly_cost",
+    "type": "float",
+    "scope": "fields.shelter.utilities[]",
+    "nullable": true
+  },
+  {
+    "path": "fields.shelter.property_taxes_annual",
+    "type": "float",
+    "scope": "applicant",
+    "nullable": true,
+    "description": "Annual property tax amount, as shown on a property tax bill/assessment"
+  },
+  {
+    "path": "fields.shelter.homeowners_insurance_annual",
+    "type": "float",
+    "scope": "applicant",
+    "nullable": true,
+    "description": "Annual homeowner's insurance premium, matching LDSS-4826's 'Insurance on home per year' field, as shown on an insurance policy/declarations page"
+  },
+  {
+    "path": "fields.shelter.lease_start_date",
+    "type": "str",
+    "scope": "applicant",
+    "nullable": true,
+    "description": "From a lease agreement, format: YYYY-MM-DD"
+  },
+  {
+    "path": "fields.assets[]",
+    "type": "array<object>",
+    "repeats": true
+  },
+  {
+    "path": "fields.assets[].resource_type",
+    "type": "enum",
+    "scope": "fields.assets[]",
+    "nullable": true,
+    "options": [
+      "checking",
+      "savings",
+      "retirement_account",
+      "stocks_bonds",
+      "life_insurance",
+      "burial_trust_or_fund",
+      "vehicle",
+      "real_estate_other_than_residence",
+      "lump_sum_payment",
+      "other"
+    ],
+    "description": "Checking, Savings, Vehicle, etc."
+  },
+  {
+    "path": "fields.assets[].amount",
+    "type": "float",
+    "scope": "fields.assets[]",
+    "nullable": true,
+    "description": "Dollar amount or value of the resource"
+  },
+  {
+    "path": "fields.assets[].vehicle_year",
+    "type": "str",
+    "scope": "fields.assets[]",
+    "nullable": true,
+    "description": "Only for resource_type=vehicle"
+  },
+  {
+    "path": "fields.assets[].vehicle_make_model",
+    "type": "str",
+    "scope": "fields.assets[]",
+    "nullable": true,
+    "description": "Only for resource_type=vehicle"
+  }
+]

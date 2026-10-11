@@ -1,122 +1,89 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useContext, useState } from "react";
+import { BridgeContext } from "./context/BridgeContext.jsx";
+import HomeScreen from "./screens/HomeScreen/HomeScreen.jsx";
+import ConsentScreen from "./screens/ConsentScreen/ConsentScreen.jsx";
+import IntakeUpload from "./screens/intakeUpload/intakeUpload.jsx";
+import RosterScreen from "./screens/RosterScreen/RosterScreen.jsx";
+import QuestionScreen from "./screens/QuestionScreen/QuestionScreen.jsx";
+import ResultsScreen from "./screens/ResultsScreen/ResultsScreen.jsx";
+import FormsScreen from "./screens/FormsScreen/FormsScreen.jsx";
+import logo from "./assets/logo.png";
 
-function App() {
-  const [count, setCount] = useState(0)
+// Steps shown in the progress bar (home has its own big logo instead)
+const PROGRESS_STEPS = ["consent", "upload", "roster", "questions", "results", "forms"];
+
+function Header({ step }) {
+  const done = ((PROGRESS_STEPS.indexOf(step) + 1) / PROGRESS_STEPS.length) * 100;
+  return (
+    <header className="app-header">
+      <div className="app-header-inner">
+        <img src={logo} alt="BridgePath" />
+      </div>
+      <div className="progress" role="progressbar" aria-label="Progress" aria-valuenow={Math.round(done)} aria-valuemin={0} aria-valuemax={100}>
+        <div className="progress-fill" style={{ width: `${done}%` }} />
+      </div>
+    </header>
+  );
+}
+
+export default function App() {
+  const [step, setStep] = useState("home");
+  const { fixing, setFixing } = useContext(BridgeContext);
+
+  // Fixing: results sends the user to one screen to fix what's missing
+  // (fixing = { type: "question" | "document", ... }); finishing it returns to
+  // results, which checks eligibility again.
+  function startFixing(fix) {
+    setFixing(fix);
+    setStep(fix.type === "question" ? "questions" : "upload");
+  }
+
+  function finishFixing() {
+    setFixing(null);
+    setStep("results");
+  }
+
+  // Which screen to show
+  function renderScreen() {
+    if (step === "home") {
+      return <HomeScreen goNext={() => setStep("consent")} />;
+    }
+
+    if (step === "consent") {
+      return <ConsentScreen goNext={() => setStep("upload")} goBack={() => setStep("home")} />;
+    }
+
+    if (step === "upload") {
+      return <IntakeUpload goNext={fixing ? finishFixing : () => setStep("roster")} />;
+    }
+
+    if (step === "roster") {
+      return <RosterScreen goNext={() => setStep("questions")} />;
+    }
+
+    if (step === "questions") {
+      return <QuestionScreen goNext={fixing ? finishFixing : () => setStep("results")} />;
+    }
+
+    if (step === "results") {
+      return (
+        <ResultsScreen
+          goNext={() => setStep("forms")}
+          goBack={() => setStep("questions")}
+          onFix={startFixing}
+        />
+      );
+    }
+
+    if (step === "forms") {
+      return <FormsScreen goBack={() => setStep("results")} onDeleted={() => setStep("home")} />;
+    }
+  }
 
   return (
     <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
+      {step !== "home" && <Header step={step} />}
+      <main className="container">{renderScreen()}</main>
     </>
-  )
+  );
 }
-
-export default App
