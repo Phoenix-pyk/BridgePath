@@ -10,7 +10,7 @@
 
 ---
 
-## The problem
+## The problem 
 
 Applying for SNAP (food stamps) in New York means filling out the **LDSS-4826**: about 8 pages and roughly 80
 questions about every person in the household, every job, every bill and every bank account. Most of those answers
@@ -31,6 +31,8 @@ delays, and many eligible families give up or never start.
    HRA).
 
 BridgePath never submits anything for you. You stay in control of your application.
+
+## Website - https://www.bridgepath.nyc
 
 ## Screenshots
 
@@ -230,3 +232,22 @@ or another language.
    translate the checklist PDF, and use the existing "letters in Spanish" option on the form.
 5. **Review:** have native speakers check the translations, since a wrong word in a benefits question can lead to
    a wrong answer.
+
+### 4. On-device document reading
+
+Read documents entirely in the browser, so uploaded files never leave the applicant's device. Today each document
+is sent to Gemini; this replaces that step with local text recognition and a small model that runs in the browser.
+
+1. **Text recognition in the browser:** use Tesseract.js to turn each uploaded image or scanned PDF into text,
+   inside the browser tab.
+2. **Structured answers from the text:** pass the text to a small in-browser language model (such as WebLLM or
+   Chrome's built-in Gemini Nano) to fill the same fields the Pydantic schema defines today, so the question engine
+   and eligibility check don't change.
+3. **Start with pay stubs:** build it for one document type first and compare its accuracy with Gemini on the
+   DemoKit documents before adding the other 24 types.
+4. **Fallback with consent:** if a document can't be read locally (a blurry photo, a complex table), ask the
+   applicant before sending it to Gemini, with SSNs and account numbers removed first.
+5. **Fill the form in the browser:** fill the LDSS-4826 with pdf-lib in the browser, so the completed application is
+   also never sent to the server.
+
+
